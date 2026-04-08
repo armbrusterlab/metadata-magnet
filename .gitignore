@@ -1,0 +1,12 @@
+test_data/
+**.log
+**_log.txt
+scripts/downstream_analysis/__pycache__/
+nextflow/work/
+nextflow/results/
+nextflow/.nextflow.log*
+nextflow/.nextflow/
+nextflow/flowchart.pdf
+nextflow/data/synteny_search_inputs/genome_db/
+nextflow/mucA/
+nextflow/wspF/

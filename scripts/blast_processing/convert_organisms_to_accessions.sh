@@ -1,0 +1,66 @@
+#!/bin/bash
+
+source activate blast_env # activate the conda environment in which BLAST is installed
+# The line above may fail if you're not in the base conda environment
+
+# Command line inputs:
+# $1: name of input file, which is a list of organisms
+# $2: name of output file, which is a list of assembly accessions (GCAs and GCFs) corresponding to the organism names in $1
+# Note that because genomes are not reliably labeled with strains, this will pull assembly accessions for each genus + species combo
+# in $1, without regard to strain.
+
+# Example run:
+# bash "${blastscripts}/convert_organisms_to_accessions.sh" "${datadir}/PA3565_organisms.txt" "${datadir}/PA3565_accessions.txt"
+# Old: bash convert_organisms_to_accessions.sh ~/data/PA3565_orthologs.txt ~/data/PA3565_accessions.txt
+
+# Commented out the following block because the organism list is now obtained before running this script.
+## First, get the list of unique organisms.
+## This is done by extracting any text found between square brackets [],
+## then taking the first two words in the organism name (i.e. genus and species) to ignore strain,
+## then sort | uniq to remove duplicates,
+## then writing the list to a temporary text file.
+#echo "Will retrieve assembly numbers for each organism name in the BLAST input."
+#
+##grep -oP '(?<=\[).+(?=\])' $1 | cut -d " " -f 1,2 | sort | uniq > ~/temp.txt
+#
+## refactor to deal with multiple titles per record (salltitles is planned to be part of the new BLAST outfmt expected by the pipeline)
+#cat $1 | cut -f 5 | tr ';' '\n' | grep -oP '(?<=\[).+(?=\])' | sort | uniq > ~/temp.txt
+#echo "Unique organism list obtained."
+
+scriptdir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# create a second temp file to which assembly accessions will be written (will contain redundant records) 
+> $scriptdir/temp.txt # starts as empty
+echo "Created temp file in ${scriptdir}"
+
+echo "Querying NCBI..."
+# iterate through each genus + species in the temp file, querying NCBI to get the corresponding AssemblyAccession
+
+IFS=$'\n' # the organism list, $1, is newline-separated.
+# Need to set up the loop this way, otherwise it only reads the first line
+for next in $(cat $1); do
+  echo "Processing: ${next}"
+  #esearch -db assembly -query "${next}" -retmax 10 | \
+  esearch -db assembly -query "${next} AND complete genome[filter]" | \
+  efetch -format docsum | \
+  xtract -pattern DocumentSummary -element AssemblyAccession >> $scriptdir/temp.txt
+  
+  sleep 2 # avoid overloading NCBI
+done
+
+echo "NCBI queries completed. Processing outputs..."
+
+# retmax is not working as intended, but in theory, it caps the number of unique identifiers returned to 10.
+# If you would like to limit the number of hits per query, just insert "head -n $upper_limit" right before it writes to ~/temp2.txt.
+
+# Important: use "${line}" rather than $line so that it interprets the entire string as one argument rather than two separate arguments
+
+# AssemblyAccession comes in two columns: the assembly number and the organism name.
+# I will take only the assembly number, but if you'd like to know the organism name, you can remove the "cut" step.
+# Write the list of unique identifiers to the output file.
+cat $scriptdir/temp.txt | cut -f 1 | sort | uniq > $2
+
+# remove temp files
+rm $scriptdir/temp.txt 
+
+echo "Done retrieving assembly numbers for each organism name."
