@@ -24,10 +24,11 @@ Of these, 15 hits intersected with the original BLAST for your query.
 (Intersected using a pairwise blast of synteny structure hits against the original BLAST hits, requiring at least 99 pident and 90 qcovs to consider a BLAST hit to be a match.)
 
 Inferred metadata origin: synteny_summary
-Metadata with rescued isolation sources written to file results_65_66_67_synteny_summary.tsv_processedMetadata.blast
-Will rescue missing categories and subcategories for results_65_66_67_synteny_summary.tsv_processedMetadata.blast using rescued_source column.
-Will rescue missing categories and subcategories for results_65_66_67_synteny_summary.tsv_processedMetadata.blast using isolation_site column.
-Isolation source categories and subcategories written to file results_65_66_67_synteny_summary.tsv_processedMetadata.blast
+(If local metadata retrieval was performed, the line above will read 'synteny_summary' even if no synteny search was performed.)
+Metadata with rescued isolation sources written to file results_65_66_67_synteny_summary_processedMetadata.blast
+Will rescue missing categories and subcategories for results_65_66_67_synteny_summary_processedMetadata.blast using rescued_source column.
+Will rescue missing categories and subcategories for results_65_66_67_synteny_summary_processedMetadata.blast using isolation_site column.
+Isolation source categories and subcategories written to file results_65_66_67_synteny_summary_processedMetadata.blast
 Successfully read 15 rows (some lines may have been skipped)
 There are 15 lines in the metadata file.
 2 rows were associated with isolation source metadata.
@@ -35,10 +36,11 @@ Among the 13 rows without isolation source, 1 isolation sources were rescued fro
 3 rows were successfully assigned a category, and 1 rows were successfully assigned a subcategory.
 
 Inferred metadata origin: synteny_summary
-Metadata with rescued isolation sources written to file results_65_67_synteny_summary.tsv_processedMetadata.blast
-Will rescue missing categories and subcategories for results_65_67_synteny_summary.tsv_processedMetadata.blast using rescued_source column.
-Will rescue missing categories and subcategories for results_65_67_synteny_summary.tsv_processedMetadata.blast using isolation_site column.
-Isolation source categories and subcategories written to file results_65_67_synteny_summary.tsv_processedMetadata.blast
+(If local metadata retrieval was performed, the line above will read 'synteny_summary' even if no synteny search was performed.)
+Metadata with rescued isolation sources written to file results_65_67_synteny_summary_processedMetadata.blast
+Will rescue missing categories and subcategories for results_65_67_synteny_summary_processedMetadata.blast using rescued_source column.
+Will rescue missing categories and subcategories for results_65_67_synteny_summary_processedMetadata.blast using isolation_site column.
+Isolation source categories and subcategories written to file results_65_67_synteny_summary_processedMetadata.blast
 Successfully read 105 rows (some lines may have been skipped)
 There are 105 lines in the metadata file.
 33 rows were associated with isolation source metadata.

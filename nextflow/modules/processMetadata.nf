@@ -41,7 +41,7 @@ process processMetadata {
     # Process each metadata file
     for input_file in ${input_files}; do
         inputBasename=\$(basename "\$input_file" .blast)
-        outname="\${inputBasename}_processedMetadata.blast"
+        outname="\${inputBasename%.*}_processedMetadata.blast"
         
         cp "\$input_file" "\$outname"
         bash "\$projDir/../scripts/metadata_processing_wrapper.sh" -f "\$outname" -c ${categoryFile} -s ${subcategoryFile} >> "\$newBenchmarkFile"
