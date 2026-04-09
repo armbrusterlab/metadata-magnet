@@ -181,6 +181,7 @@ workflow {
             fasta = fasta.mix(current.fastaFiles.flatMap { it })//.view{ content -> "Contents of fasta channel after synteny search: $content" }
 
             benchmarking = collectSyntenyBenchmarking(benchmarking, current.benchmarkFiles.collect())
+            // benchmarking = current.benchmarkFiles.flatMap { it }
         }
         
         // after filtering, retrieve metadata (if it hasn't already been obtained in steps 3 and/or 4 of filtering)
@@ -209,7 +210,12 @@ workflow {
 
         // Process the final metadata
         def finalMetadata = metadata.mix(retrieveMetadata_afterFiltering.out)//.view{ content -> "Contents of finalMetadata channel: $content" } 
-        metadata = processMetadata(finalMetadata, params.category, params.subcategory) // will publish this
+        // benchmarking.view()
+        // finalMetadata.collect().view()
+
+        processMetadata(finalMetadata.collect(), params.category, params.subcategory, benchmarking)
+        metadata = processMetadata.out.metadata // will publish this
+        benchmarking = processMetadata.out.benchmark
 
         // produce a FASTA from the current blast only if synteny search hasn't been performed (i.e. only if the fasta channel is still empty)
         // the synteny search may produce multiple FASTAs, but if you don't do synteny search, currentBlast is guaranteed to have 1 thing in it, so you just make a FASTA based on that

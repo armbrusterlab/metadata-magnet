@@ -51,6 +51,8 @@ spec.loader.exec_module(mp)
 # guess the metadata origin
 origin = mp.determine_origin("$metadata_file")
 print(f"Inferred metadata origin: {origin}")
+if (origin == 'synteny_summary'):
+  print("(If local metadata retrieval was performed, the line above will read 'synteny_summary' even if no synteny search was performed.)")
 if origin not in ['synteny_summary', 'fetched']:
   raise Exception(f"Invalid origin {origin}")
 
@@ -61,4 +63,8 @@ EOF
 
 # --- Run R script for benchmarking ---
 # Rscript "$scriptsdir/R_scripts/benchmarking.R" "$metadata_file"
-Rscript -e "source('$scriptsdir/R_scripts/benchmarking.R'); benchmark('$out')"
+if [[ "$out" != "" ]]; then
+  Rscript -e "source('$scriptsdir/R_scripts/benchmarking.R'); benchmark('$out')"
+else
+  Rscript -e "source('$scriptsdir/R_scripts/benchmarking.R'); benchmark('$metadata_file')"
+fi

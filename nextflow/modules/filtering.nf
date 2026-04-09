@@ -1,27 +1,3 @@
-process foo {
-    output:
-    val "foo"
-
-    script:
-    """
-    echo "foo"
-    """
-}
-
-process bar {
-    conda "${workflow.projectDir}/envs/metadata-magnet-env.yaml"
-
-    output:
-    val "bar"
-
-    script:
-    """
-    #!/usr/bin/env Rscript
-
-    installed.packages()
-    """
-}
-
 process filterToEvalue {
     input:
     path inputFile
