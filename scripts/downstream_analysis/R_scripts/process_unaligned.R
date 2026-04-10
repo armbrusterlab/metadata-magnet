@@ -14,6 +14,8 @@ library(tidyverse) # working with dataframes
 library(seqinr) # to read alignments
 library(glue) # fstrings
 library(reticulate) # call Python functions
+use_condaenv("metadata-magnet-env", required = TRUE)
+reticulate::py_config()
 #library(here) # finds the project root
 
 ### Define functions
@@ -91,9 +93,6 @@ process_data <- function(multifasta_file, metadata, metadata_type, sequence_name
 
 process_metadata <- function(metadata_file, metadata_type) {
   # Use data.table with maximum error tolerance
-  if (!requireNamespace("data.table", quietly = TRUE)) {
-    install.packages("data.table")
-  }
   library(data.table)
   
   # Read with maximum error tolerance
