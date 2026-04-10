@@ -1,0 +1,13 @@
+queryFasta: '/home/kcw2/metadata-magnet/nextflow/example_data/wspF_PAO1.fasta'
+blastPath: '/home/kcw2/metadata-magnet/nextflow/example_data/toydb/'
+blastName: 'toydb'
+separateIDs: 'true'
+
+filterByGenome: 'true'
+genomeDBsynteny: '/home/kcw2/metadata-magnet/nextflow/example_data/genome_db/'
+syntenyInput: '/home/kcw2/metadata-magnet/nextflow/example_data/synteny_search_inputs/synteny_input_comprehensive_relativePaths.tsv'
+hmmsList: '/home/kcw2/metadata-magnet/nextflow/example_data/synteny_search_inputs/hmms_of_interest.txt'
+hmmsDir: '/home/kcw2/metadata-magnet/nextflow/example_data/synteny_search_inputs/hmms/'
+hmmsMetadata: '/home/kcw2/metadata-magnet/nextflow/example_data/synteny_search_inputs/hmms_wspF.tsv'
+
+align: 'true'

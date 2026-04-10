@@ -1,0 +1,5 @@
+#ncbi_accession	label	product_name	gene_symbol	ec_numbers
+PIRSF000876	RR_chemtxs_CheB	"Chemotaxis response regulator methylesterase, CheB type"	wspF	
+PTHR45138	Diguanylate_Cyclase	Bacterial Diguanylate Cyclase	wspR	
+PTHR43395	Bact_Chemotaxis_CheA	Bacterial Chemotaxis Sensor Histidine Kinase CheA	wspE	
+PF01584	CheW-lke_dom	CheW-like domain	wspE	

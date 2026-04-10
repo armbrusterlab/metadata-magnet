@@ -11,7 +11,7 @@ print_help() {
 }
 
 # Set default value for optional flags
-db_fasta="comprehensive.fasta" # will be created in db_dir
+db_fasta="comprehensive.fasta" # by default, will be created in db_dir
 
 # Parse options with getopts (not GNU getopts, as that causes issues on Mac systems)
 while getopts "g:f:d:t:h" opt; do
@@ -25,6 +25,10 @@ while getopts "g:f:d:t:h" opt; do
 done
 
 scriptsdir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd ) # get location of current script; this is where the other scripts are found too
+
+# AFAIK you have to cd to the directory in which you want files to be created, so I'll get the absolute paths to the inputs.
+genome_db=$(realpath $genome_db)
+db_dir=$(realpath $db_dir)
 
 mkdir -p $db_dir
 cd $db_dir

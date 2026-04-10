@@ -115,12 +115,11 @@ build_database() {
             # Even if there are multiple .gbff files, there will be only one labelled peptide database will be made because they'll overwrite each other
             for my_file in "$dir"/*.gbff.gz; do
                 gzip -d "$my_file" # unzip so that pynteny build will work
-            done
+                my_file_unzipped="${my_file%.gz}"
 
-            for my_file in "$dir"/*.gbff; do
-                echo "Building database from ${my_file} (PID $$)"
-                pynteny build --data "$my_file" --outfile "$labelled_db"
-                gzip "$my_file"
+                echo "Building database from ${my_file_unzipped} (PID $$)"
+                pynteny build --data "$my_file_unzipped" --outfile "$labelled_db"
+                gzip "$my_file_unzipped"
             done
         fi
     fi

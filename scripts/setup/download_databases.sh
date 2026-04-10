@@ -28,7 +28,7 @@ ref=$2
 dbdir=$3
 
 mkdir -p $dbdir
-cd $dbdir # so that the databases are placed in the correct location
+#cd $dbdir # so that the databases are placed in the correct location
 #cd "${HOME}/data" # since these aren't complete database downloads, I won't put them in the shared directory
 
 # the commands below assume the user wants to download bacterial genomes
@@ -37,7 +37,7 @@ cd $dbdir # so that the databases are placed in the correct location
 procs_to_use=$(( $(nproc) / 4 ))
 
 if [[ ! -z "$(cat ${gb})" ]]; then # check if the file is not empty
-  ncbi-genome-download --section genbank --assembly-accessions "${gb}" bacteria --parallel $procs_to_use --progress-bar &
+  ncbi-genome-download --section genbank --assembly-accessions "${gb}" bacteria --parallel $procs_to_use -o $dbdir &
   #ncbi-genome-download --section genbank --assembly-accessions "${gb}" bacteria --parallel 12 --progress-bar --dry-run # for testing
   pid1=$!
   echo "Downloading genbank with job id ${pid1}"
@@ -46,7 +46,7 @@ else
 fi
 
 if [[ ! -z "$(cat ${ref})" ]]; then # check if the file is not empty
-  ncbi-genome-download --section refseq --assembly-accessions "${ref}" bacteria --parallel $procs_to_use --progress-bar &
+  ncbi-genome-download --section refseq --assembly-accessions "${ref}" bacteria --parallel $procs_to_use -o $dbdir &
   #ncbi-genome-download --section refseq --assembly-accessions "${ref}" bacteria --parallel 12 --progress-bar --dry-run # for testing
   pid2=$!
   echo "Downloading refseq with job id ${pid2}"

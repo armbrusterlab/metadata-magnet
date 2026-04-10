@@ -4,7 +4,8 @@
 yes = ["y", "yes"]
 def format_input(param_name, param_value):
     # returns the string to write to write to the file.
-    return f"{param_name}: '{param_value.strip().strip('"')}'\n"
+    param_value = param_value.strip().strip('"')
+    return f"{param_name}: '{param_value}'\n"
 
 def preamble():
     print("Welcome to the Metadata Magnet input file setup wizard. " \
@@ -208,6 +209,6 @@ def run_wizard():
     print(f"The input parameters file is complete! {outfile}")
     print("Example run: CD to the nextflow dir (where main.nf is located) and run the following:")
     print(f"nextflow run main.nf -params-file {outfile}")
-    print("(Adding the -resume flag is recommended on subsequent runs, and there is no disadvantage to using it even when it does not apply.)")
+    print("(Adding the -resume flag is recommended on subsequent runs.)")
 
 run_wizard()

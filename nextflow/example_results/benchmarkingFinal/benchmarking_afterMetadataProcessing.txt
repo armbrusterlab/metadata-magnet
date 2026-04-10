@@ -1,0 +1,116 @@
+[1] TRUE
+Number of BLAST hits: 3223
+Number of unique genome IDs: 84
+Number of unique sequence IDs: 1887
+Number of unique sequences: 1447
+Number of unique titles: 3200
+Number of unique organisms: 44
+# A tibble: 84 × 2
+   genome_id           n
+   <chr>           <int>
+ 1 GCF_003731885.1    56
+ 2 GCF_013409685.2    55
+ 3 GCF_055406285.1    51
+ 4 GCF_002883245.1    50
+ 5 GCF_017350185.1    50
+ 6 GCF_001838695.1    49
+ 7 GCF_013385535.1    49
+ 8 GCF_029335335.1    49
+ 9 GCF_003700725.1    48
+10 GCF_003700875.1    47
+# ℹ 74 more rows
+Number of hits from original BLAST: 3223
+Number of hits remaining after filtering to top hit per genome: 84
+
+No longer filtering the file from the original BLAST. Instead, for each synteny search, a subset is taken from the hits that closely resemble sequences in the original BLAST.
+There are 102 hits for the synteny structure corresponding to outdir negBackward.
+Of these, 68 hits intersected with the original BLAST for your query.
+(Intersected using a pairwise blast of synteny structure hits against the original BLAST hits, requiring at least 99 pident and 90 qcovs to consider a BLAST hit to be a match.)
+There are 1 hits for the synteny structure corresponding to outdir negForward.
+Of these, 0 hits intersected with the original BLAST for your query.
+(Intersected using a pairwise blast of synteny structure hits against the original BLAST hits, requiring at least 99 pident and 90 qcovs to consider a BLAST hit to be a match.)
+There are 9 hits for the synteny structure corresponding to outdir posBackward.
+Of these, 0 hits intersected with the original BLAST for your query.
+(Intersected using a pairwise blast of synteny structure hits against the original BLAST hits, requiring at least 99 pident and 90 qcovs to consider a BLAST hit to be a match.)
+There are 7 hits for the synteny structure corresponding to outdir posForward.
+Of these, 0 hits intersected with the original BLAST for your query.
+(Intersected using a pairwise blast of synteny structure hits against the original BLAST hits, requiring at least 99 pident and 90 qcovs to consider a BLAST hit to be a match.)
+There are 27 hits for the synteny structure corresponding to outdir strandlessBackward.
+Of these, 0 hits intersected with the original BLAST for your query.
+(Intersected using a pairwise blast of synteny structure hits against the original BLAST hits, requiring at least 99 pident and 90 qcovs to consider a BLAST hit to be a match.)
+There are 153 hits for the synteny structure corresponding to outdir strandlessForward.
+Of these, 68 hits intersected with the original BLAST for your query.
+(Intersected using a pairwise blast of synteny structure hits against the original BLAST hits, requiring at least 99 pident and 90 qcovs to consider a BLAST hit to be a match.)
+
+Inferred metadata origin: synteny_summary
+(If local metadata retrieval was performed, the line above will read 'synteny_summary' even if no synteny search was performed.)
+Metadata with rescued isolation sources written to file negBackward_synteny_summary_processedMetadata.blast
+Will rescue missing categories and subcategories for negBackward_synteny_summary_processedMetadata.blast using rescued_source column.
+Will rescue missing categories and subcategories for negBackward_synteny_summary_processedMetadata.blast using isolation_site column.
+Isolation source categories and subcategories written to file negBackward_synteny_summary_processedMetadata.blast
+Successfully read 102 rows (some lines may have been skipped)
+There are 102 lines in the metadata file.
+71 rows were associated with isolation source metadata.
+Among the 31 rows without isolation source, 12 isolation sources were rescued from the titles or isolation_site column, making 83 rows eligible for categorization.
+75 rows were successfully assigned a category, and 71 rows were successfully assigned a subcategory.
+
+Inferred metadata origin: synteny_summary
+(If local metadata retrieval was performed, the line above will read 'synteny_summary' even if no synteny search was performed.)
+Metadata with rescued isolation sources written to file negForward_synteny_summary_processedMetadata.blast
+Will rescue missing categories and subcategories for negForward_synteny_summary_processedMetadata.blast using rescued_source column.
+Will rescue missing categories and subcategories for negForward_synteny_summary_processedMetadata.blast using isolation_site column.
+Isolation source categories and subcategories written to file negForward_synteny_summary_processedMetadata.blast
+Successfully read 1 rows (some lines may have been skipped)
+There are 1 lines in the metadata file.
+1 rows were associated with isolation source metadata.
+Among the 0 rows without isolation source, 0 isolation sources were rescued from the titles or isolation_site column, making 1 rows eligible for categorization.
+1 rows were successfully assigned a category, and 1 rows were successfully assigned a subcategory.
+
+Inferred metadata origin: synteny_summary
+(If local metadata retrieval was performed, the line above will read 'synteny_summary' even if no synteny search was performed.)
+Metadata with rescued isolation sources written to file posBackward_synteny_summary_processedMetadata.blast
+Will rescue missing categories and subcategories for posBackward_synteny_summary_processedMetadata.blast using rescued_source column.
+Will rescue missing categories and subcategories for posBackward_synteny_summary_processedMetadata.blast using isolation_site column.
+Isolation source categories and subcategories written to file posBackward_synteny_summary_processedMetadata.blast
+Successfully read 9 rows (some lines may have been skipped)
+There are 9 lines in the metadata file.
+6 rows were associated with isolation source metadata.
+Among the 3 rows without isolation source, 3 isolation sources were rescued from the titles or isolation_site column, making 9 rows eligible for categorization.
+9 rows were successfully assigned a category, and 7 rows were successfully assigned a subcategory.
+
+Inferred metadata origin: synteny_summary
+(If local metadata retrieval was performed, the line above will read 'synteny_summary' even if no synteny search was performed.)
+Metadata with rescued isolation sources written to file posForward_synteny_summary_processedMetadata.blast
+Will rescue missing categories and subcategories for posForward_synteny_summary_processedMetadata.blast using rescued_source column.
+Will rescue missing categories and subcategories for posForward_synteny_summary_processedMetadata.blast using isolation_site column.
+Isolation source categories and subcategories written to file posForward_synteny_summary_processedMetadata.blast
+Successfully read 7 rows (some lines may have been skipped)
+There are 7 lines in the metadata file.
+6 rows were associated with isolation source metadata.
+Among the 1 rows without isolation source, 0 isolation sources were rescued from the titles or isolation_site column, making 6 rows eligible for categorization.
+6 rows were successfully assigned a category, and 3 rows were successfully assigned a subcategory.
+
+Inferred metadata origin: synteny_summary
+(If local metadata retrieval was performed, the line above will read 'synteny_summary' even if no synteny search was performed.)
+Metadata with rescued isolation sources written to file strandlessBackward_synteny_summary_processedMetadata.blast
+Will rescue missing categories and subcategories for strandlessBackward_synteny_summary_processedMetadata.blast using rescued_source column.
+Will rescue missing categories and subcategories for strandlessBackward_synteny_summary_processedMetadata.blast using isolation_site column.
+Isolation source categories and subcategories written to file strandlessBackward_synteny_summary_processedMetadata.blast
+Successfully read 27 rows (some lines may have been skipped)
+There are 27 lines in the metadata file.
+18 rows were associated with isolation source metadata.
+Among the 9 rows without isolation source, 1 isolation sources were rescued from the titles or isolation_site column, making 19 rows eligible for categorization.
+18 rows were successfully assigned a category, and 14 rows were successfully assigned a subcategory.
+
+Inferred metadata origin: synteny_summary
+(If local metadata retrieval was performed, the line above will read 'synteny_summary' even if no synteny search was performed.)
+Metadata with rescued isolation sources written to file strandlessForward_synteny_summary_processedMetadata.blast
+Will rescue missing categories and subcategories for strandlessForward_synteny_summary_processedMetadata.blast using rescued_source column.
+Will rescue missing categories and subcategories for strandlessForward_synteny_summary_processedMetadata.blast using isolation_site column.
+Isolation source categories and subcategories written to file strandlessForward_synteny_summary_processedMetadata.blast
+Successfully read 153 rows (some lines may have been skipped)
+There are 153 lines in the metadata file.
+102 rows were associated with isolation source metadata.
+Among the 51 rows without isolation source, 19 isolation sources were rescued from the titles or isolation_site column, making 121 rows eligible for categorization.
+109 rows were successfully assigned a category, and 98 rows were successfully assigned a subcategory.
+

@@ -1,0 +1,17 @@
+e550cce69d7ea4d7c24133a27ed49725  ./annotation_hashes.txt
+3e1907ef2fd034cd0a8cefed969bd828  ./GCF_001450185.1_WH-SGI-V-07372_assembly_report.txt
+7e71bb9a070d94802d904ae4ecf21fae  ./GCF_001450185.1_WH-SGI-V-07372_assembly_stats.txt
+bcc755cd0bbdfb5a32f2d4da6d41113b  ./GCF_001450185.1_WH-SGI-V-07372_cds_from_genomic.fna.gz
+672b7789df9d29d74c75a92059760dd7  ./GCF_001450185.1_WH-SGI-V-07372_fcs_report.txt
+76444019b58c0611eba1e5b6b425c75f  ./GCF_001450185.1_WH-SGI-V-07372_feature_count.txt
+666d0018f802518d2eae22e92a20000f  ./GCF_001450185.1_WH-SGI-V-07372_feature_table.txt.gz
+259dd69fc3a6e28ba2c3032be1fc3635  ./GCF_001450185.1_WH-SGI-V-07372_gene_ontology.gaf.gz
+e5a84ab683851cfce123ad84ef643215  ./GCF_001450185.1_WH-SGI-V-07372_genomic.fna.gz
+ee53665595c61f8844de30cafa1db674  ./GCF_001450185.1_WH-SGI-V-07372_genomic.gbff.gz
+a514eb79d464ba2f8520119464b4ee7c  ./GCF_001450185.1_WH-SGI-V-07372_genomic.gff.gz
+172f46adde36aeaf3b7e2afdae01fa20  ./GCF_001450185.1_WH-SGI-V-07372_genomic.gtf.gz
+a46a153751d2899832c730969241b36d  ./GCF_001450185.1_WH-SGI-V-07372_protein.faa.gz
+3ab16d2e438bc8409d52de6f111207e9  ./GCF_001450185.1_WH-SGI-V-07372_protein.gpff.gz
+9a81e6b87cbbdf62231c0fcd9a9db802  ./GCF_001450185.1_WH-SGI-V-07372_rna_from_genomic.fna.gz
+3a78adff770f74c119f6f387356c9ec0  ./GCF_001450185.1_WH-SGI-V-07372_translated_cds.faa.gz
+97c5afff9ad482512cc1066f9a18b82d  ./GCF_001450185.1_WH-SGI-V-07372_wgsmaster.gbff.gz
