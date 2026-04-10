@@ -18,3 +18,4 @@ dependencies:
   - r-reticulate
   - r-rstatix
   - r-seqinr
+  - r-shiny
