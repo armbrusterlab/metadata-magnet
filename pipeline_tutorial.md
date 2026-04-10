@@ -2,7 +2,12 @@
 Table of contents: TODO
 - [Setup](#setup)
 - [Running the Nextflow pipeline](#running-the-nextflow-pipeline)
-- [Running the R Shiny GUI on Nextflow pipeline outputs](#running-the-r-shiny-gui-on-nextflow-pipeline-outputs)
+  - [Example run: quickstart](#example-run-quickstart)
+  - [Example run: in-depth](#example-run-setup-nextflow-r-shiny-gui)
+    - [Create a params file](#prepare-nextflow-params-file)
+    - [Run Nextflow](#run-the-nextflow-pipeline)
+    - [Run GUI](#analyze-nextflow-outputs-in-the-gui)
+- [Pipeline outputs](#pipeline-outputs)
 
 # Setup
 It is assumed that the user is running this pipeline on a Unix/Linux server. I have been using Ubuntu 24.04.2 LTS (GNU/Linux 6.8.0-44-generic x86_64).  
@@ -11,7 +16,7 @@ Clone the repository.
 git clone https://github.com/armbrusterlab/metadata-magnet.git
 ```
 [Install Nextflow](https://www.nextflow.io/docs/latest/install.html) to run the pipeline.  
-If you would like to use the GUI to produce figures and statistical analyses from the pipeline outputs, install [R](https://www.anaconda.com/docs/getting-started/working-with-conda/packages/using-r-language) and [R Shiny](https://shiny.posit.co/r/getstarted/shiny-basics/lesson1/). Alternatively, activate the metadata-magnet-env conda environment (explained below).  
+If you would like to use the GUI to produce figures and statistical analyses from the pipeline outputs, activate the metadata-magnet-env conda environment (explained below).  
 
 Nextflow automatically handles conda environment management. However, to use pipeline scripts as standalone functions, you will need to create and activate conda environments from the corresponding YAML files.
 ```bash
@@ -21,11 +26,11 @@ conda env create -f metadata-magnet/scripts/setup/metadata-magnet-setup-env.yaml
 # to run the following scripts: synteny_wrapper.sh, scripts in metadata-magnet/scripts/synteny_search/ dir
 conda env create -f metadata-magnet/nextflow/envs/pynteny-env.yaml
 
-# to run all other scripts:
+# to run all other scripts, including pipeline_gui.R:
 conda env create -f metadata-magnet/nextflow/envs/metadata-magnet-env.yaml
 
 # example of conda activation
-conda activate metadata-magnet-setup-env
+conda activate metadata-magnet-env
 ```
 
 # Running the Nextflow pipeline
@@ -222,7 +227,8 @@ If running on a Unix/Linux server, take the following steps to view the GUI:
 <img width="582" height="709" alt="image" src="https://github.com/user-attachments/assets/d745cf29-eb65-475f-9d61-0163e42a5d8c" />  
 
 Use absolute paths. Replace with the paths to the respective files on your own device. It is okay for the paths and output directory to be surrounded by quotes.   
-The reference sequence ID, if you provide it, must match exactly with the sequence's name in the FASTA. Note that if you filter out the reference sequence from your dataset, it won't appear in figures.
+The reference sequence ID, if you provide it, must match exactly with the sequence's name in the FASTA. Note that if you filter out the reference sequence from your dataset, it won't appear in figures.  
+You may see two sequence columns: sequence.x and sequence.y. This is a byproduct of joining the FASTA with the metadata. I _think_ these columns are identical under most circumstances, with sequence.x coming from the FASTA and sequence.y coming from the metadata table, but you should press the "Save current data to TSV" and inspect it to be certain. (Note to self: previous iterations of the pipeline used aligned fragments from BLAST for the FASTA sequences; current iteration pulls the sequence directly from the GenBank files or NCBI esearch. Aligned fragments may appear in sequence_old column.)
 
 ##### Unaligned data
 FASTA:
@@ -269,6 +275,7 @@ I will filter out the "no category" records, and filter to only "aeruginosa" spe
 <img width="1015" height="58" alt="image" src="https://github.com/user-attachments/assets/69ecfa91-4410-4da8-aca8-80dba267c8c8" />  
 
 #### Visualize the data
+Sometimes, the GUI fails to show the most recent version of figures, even if you refresh the image list. In that case, please open the file from the terminal.
 ##### Histograms
 You can make histograms on any numeric variable, such as the sequence_length column which is created if loading unaligned sequences. Histograms are produced on several levels: a histogram for the entire dataset, a set of histograms for each group variable category, and a set of histograms for each subcategory within the category. If the selected group variable is (isolation source) category, then the subcategory will be (isolation source) subcategory. If the selected group variable is genus, then the subcategory will be species.  
 If the reference sequence appears in the current subset of the data, its length will also be marked on the histograms.  
@@ -299,9 +306,23 @@ Sequence logos for each subcategory in the "natural environment" category:
 <img width="1427" height="721" alt="image" src="https://github.com/user-attachments/assets/6336441e-d465-4ba6-af40-94e86557d35a" />  
 
 #### Run statistical analyses
-TODO
+We offer several scripts for statistical tests. Currently, the scripts available are as follows. We may implement more.
+##### test_normality.R
+Given a quantitative variable (numeric column), test whether the data is distributed normally using the Shapiro-Wilk test. Optionally, test whether the the quantitative variable has equal variance across groups using Levene's test. Based on whether the data is normal, suggests a test type (parametric or non-parametric) to use for other statistical analyses. Runs upon loading data.  
+<img width="1162" height="674" alt="image" src="https://github.com/user-attachments/assets/f0b8715c-9172-4d9b-9134-fd29bbeea410" />  
 
-## Pipeline outputs
+##### test_quantResponse_categPredictor.R
+Given a quantitative variable (numeric column) and a group variable, determine whether the numeric variable is significantly different across groups, and if so, which pairs of groups it differs between.
+<img width="677" height="1382" alt="image" src="https://github.com/user-attachments/assets/24c8ec92-ea2e-4eed-89c3-7af4ecac33e3" />
+
+##### test_sequence_diversity.R
+Requires a reference sequence ID. Between groups, compares the mutational richness relative to a single reference sequence. This is a flawed approach, so usage of this script is not recommended.
+<img width="1669" height="1255" alt="image" src="https://github.com/user-attachments/assets/e55d97f3-db79-4a1e-81bc-4faa16130d0f" />
+
+##### test_resampled_distribution_properties.R
+It is not recommended to use this, as it consistently reports highly significant p-values regardless of the dataset.
+
+# Pipeline outputs
 my_results/  
 ├── benchmarkingFinal/  
 │   └── Text file named after whichever filtering step was the last to run  
