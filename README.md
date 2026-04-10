@@ -16,7 +16,7 @@ As of the time of writing, the [NCBI datasets](https://www.ncbi.nlm.nih.gov/data
 A variety of utilities are provided: you may filter your ortholog dataset in various ways, automatically categorize isolation source metadata into groups such as "host" or "natural environment", generate figures to visualize differences between categories, and run statistical tests on allele properties.
 
 ## Pipeline tutorial
-To run the pipeline, please refer to the tutorial linked [here](https://github.com/kcw27/metadata-magnet/main/pipeline_tutorial.md).
+To run the pipeline, please refer to the tutorial linked [here](https://github.com/armbrusterlab/metadata-magnet/blob/main/pipeline_tutorial.md).
 
 ## Pipeline overview
 Stages of the pipeline:
