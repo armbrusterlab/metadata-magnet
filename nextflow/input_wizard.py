@@ -11,7 +11,7 @@ def preamble():
     print("Welcome to the Metadata Magnet input file setup wizard. " \
         "\nCompletion of this form will generate a params file (YAML format) for your pipeline run in Nextflow. " \
         "(nextflow run option: -params-file my_params_file.yaml)" \
-        "\nThe inputs you enter here will be used by the pipeline to produce a FASTA that represents orthologs of " \
+        "\nThe inputs you enter here will be used by the pipeline to produce a FASTA that represents homologs of " \
         "your protein of interest (with various kinds of optional filtering) as well as a metadata file. " \
         "\nThe FASTA and metadata outputs may then be used as inputs to the GUI for statistical tests and visualization.")
 
@@ -92,7 +92,7 @@ def filter(outfile):
                 "(with any filtering specified earlier), and the intersection will return the subset of sequences from the synteny context search that " \
                 "closely resemble sequences among the BLAST hits. More specifically, the synteny hits will be blasted against a database made from the BLAST hits. " \
                 "You may now specify filtering thresholds for pident (percent identity) and qcovs (query coverage per subject) for this intersection blast. " \
-                "Based on these thresholds, a subset of the hits from the synteny search (i.e. orthologs that appear in the specified synteny context) will be kept." \
+                "Based on these thresholds, a subset of the hits from the synteny search (i.e. homologs that appear in the specified synteny context) will be kept." \
                 "Refer to BLAST documentation: https://www.ncbi.nlm.nih.gov/books/NBK279684/#appendices.Options_for_the_commandline_a")
             
             pidentBool = input("Would you like to specify a pident threshold different from the default of 99? (y/n): ")
