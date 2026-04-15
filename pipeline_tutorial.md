@@ -205,7 +205,15 @@ The full output tree may be found [later in this document](#pipeline-outputs).
 
 ### Optional: additional filtering/processing of metadata
 The GUI is capable of filtering by isolation source category, isolation source subcategory, genus, or species. It also adds a column for sequence length if loading unaligned sequences. If you would like to perform additional filtering of the metadata, you may use helper functions such as those in [filter_metadata.py](https://github.com/armbrusterlab/metadata-magnet/blob/main/scripts/downstream_analysis/filter_metadata.py). You may also add columns to the metadata, e.g. using [find_pq_repeats.py](https://github.com/armbrusterlab/metadata-magnet/blob/main/scripts/downstream_analysis/find_pq_repeats.py) (TODO: refactor the script to take CLIs).  
-If filtering the metadata file after conclusion of the Nextflow stage, you don't need to subset the corresponding FASTA file, as the GUI is able to drop sequences lacking metadata. However, when you load the data in the GUI, you do need to click the "Apply Subset" button in order to remove the rows with no metadata. (Rows with _NA_ metadata do not show up in the group variable selection menu, but they will be removed if you click "Apply Subset", even if all categories are still selected.) If you need the filtered FASTA, use convert_blast_to_fasta.sh to convert the filtered metadata file to FASTA. (If the metadata is a synteny search summary, you will need to reorder columns to match the script's expected format.)
+If filtering the metadata file after conclusion of the Nextflow stage, you don't need to subset the corresponding FASTA file, as the GUI is able to drop sequences lacking metadata. However, when you load the data in the GUI, you do need to click the "Apply Subset" button in order to remove the rows with no metadata. (Rows with _NA_ metadata do not show up in the group variable selection menu, but they will be removed if you click "Apply Subset", even if all categories are still selected.) If you need the filtered FASTA, use convert_blast_to_fasta.sh to convert the filtered metadata file to FASTA. (If the metadata is a synteny search summary, you will need to reorder columns to match the script's expected format.)  
+
+Here is an example of how you might add metadata to the metadata file: In this metadata file (not included in the repository), there are sequences with repeats of the PQ motif. I will use [find_longest_repeat.py](https://github.com/armbrusterlab/metadata-magnet/blob/main/scripts/downstream_analysis/find_longest_repeat.py) to find the length of the longest PQ repeat region, i.e. the greatest number of consecutive PQ units, in each sequence.
+```
+python
+import find_longest_repeat
+find_longest_repeat.summarize_repeats("/home/kcw2/data/testing/pq_repeats_metadata.tsv", motif = "PQ", seq_col = "sequence.x")
+# adds a longest_repeat column to the metadata file
+```
 
 ### Analyze Nextflow outputs in the GUI
 #### Open the GUI
