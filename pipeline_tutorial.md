@@ -174,6 +174,7 @@ If you are interested in performing synteny-aware filtering of your ortholog dat
 ```bash
 python metadata-magnet/nextflow/input_wizard.py
 ```
+Alternatively, for a more user-friendly experience, you may open [metadata-magnet/nextflow/input_wizard.html](https://github.com/armbrusterlab/metadata-magnet/blob/main/nextflow/input_wizard.html) in a web browser, enter your inputs, and copy and paste the outputs on the final screen to a .yaml file. This is a direct translation of input_wizard.py, implemented in Twine.  
 The params file used for this example run is [metadata-magnet/nextflow/example_data/input.yaml](https://github.com/armbrusterlab/metadata-magnet/blob/main/nextflow/example_data/input.yaml).
 Here are the responses I entered to produce that file:
 <img width="2058" height="1278" alt="image" src="https://github.com/user-attachments/assets/68615a90-882d-4f26-b5b9-940fed7671fa" />  
