@@ -1,5 +1,5 @@
 # Pipeline tutorial
-Table of contents: TODO
+Table of contents:
 - [Setup](#setup)
 - [Running the Nextflow pipeline](#running-the-nextflow-pipeline)
   - [Example run: quickstart](#example-run-quickstart)
@@ -49,7 +49,14 @@ nextflow run main.nf -params-file test-params.yaml -output-dir my_test_results -
 If you are downloading a pre-made BLAST protein database, such as nr, you can skip this step. However, if you would like to curate a set of NCBI genomes to BLAST, you may use the provided scripts to download the genomes and produce a BLAST database.
 #### Download genome database
 Downloaded genomes for this example run may be found at metadata-magnet/nextflow/example_data/genome_db, in case you are having trouble with the genome download step.  
-We are currently working on implementing a script to extract a list of genome IDs from NCBI assembly summaries. For now, we assume that the starting point is a list of NCBI assembly accessions, like [genomeids.txt](https://github.com/armbrusterlab/metadata-magnet/blob/main/nextflow/example_data/genomeids.txt).
+
+Here is an example of how you might get a list of genome IDs through the [NCBI datasets tool](https://github.com/ncbi/datasets):
+```bash
+datasets summary genome taxon 80869 --as-json-lines | dataformat tsv genome --fields accession | tail -n +2 > genomeids.txt # removes the header
+```
+We are currently working on implementing a script to extract a list of genome IDs from NCBI assembly summaries.
+
+Once we have a list of NCBI assembly accessions, like [genomeids.txt](https://github.com/armbrusterlab/metadata-magnet/blob/main/nextflow/example_data/genomeids.txt), we can start downloading the .gbff files for the corresponding genomes.  
 ```bash
 conda activate metadata-magnet-setup-env
 
