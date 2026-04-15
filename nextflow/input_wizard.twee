@@ -1,0 +1,430 @@
+:: StoryTitle
+input_wizard
+
+
+:: StoryData
+{
+  "ifid": "dd5e186a-0f78-4397-ac92-39d1a3f4e346",
+  "format": "SugarCube",
+  "format-version": "2.37.3",
+  "start": "Introduction",
+  "zoom": 1
+}
+
+
+:: Introduction {"position":"700,500","size":"100,100"}
+Welcome to the Metadata Magnet input file setup wizard.
+Completion of this form will generate a block of text which you can save as a params file (YAML format) for your pipeline run in Nextflow. (nextflow run option: -params-file my_params_file.yaml)
+The inputs you enter here will be used by the pipeline to produce a FASTA that represents homologs of your protein of interest (with various kinds of optional filtering) as well as a metadata file.
+The FASTA and metadata outputs may then be used as inputs to the GUI for statistical tests and visualization.
+
+
+
+<<set $outputString to "">>
+[[NEXT|blast]]
+
+
+:: align {"position":"1125,2125","size":"100,100"}
+Would you like to align your FASTAs automatically using this pipeline?
+MUSCLE/super5 is selected based on the size of the final FASTA.
+If you require greater control over the alignment method, please select 'no' and find the FASTAs in the fasta/not_aligned subdirectory of the output directory. 
+
+
+[[YES|align2]]
+[[NO|finalizeOutputs]]
+
+
+
+:: align2 {"position":"1250,2250","size":"100,100"}
+<<set $outputString to setup.formatInput($outputString, "align", "true") >>
+<<goto "finalizeOutputs">>
+
+
+:: blast {"position":"700,625","size":"100,100"}
+Collecting inputs for BLAST.
+Please enter the path to the FASTA containing your query sequence. Ensure that the FASTA contains only one sequence.
+
+
+<input id="queryInput" type="text">
+<<button "Submit path to query FASTA">>
+    <<set $queryFasta = $("#queryInput").val()>>
+    <<set $outputString to setup.formatInput($outputString, "queryFasta", $queryFasta) >>
+    <<goto "blast2">>
+<</button>>
+
+
+:: blast2 {"position":"700,750","size":"100,100"}
+Please enter the path to the FASTA containing your query sequence. Ensure that the FASTA contains only one sequence.
+
+
+<input id="blastPathInput" type="text">
+<<button "Submit blast db path">>
+    <<set $blastPath = $("#blastPathInput").val()>>
+    <<set $outputString to setup.formatInput($outputString, "blastPath", $blastPath) >>
+    <<goto "blast3">>
+<</button>>
+
+
+
+
+
+:: blast3 {"position":"700,875","size":"100,100"}
+Please enter the name/title of your BLAST database. This is the part of the filename that is shared across the BLAST db files, not including extensions. 
+
+
+<input id="blastNameInput" type="text">
+<<button "Submit blast db name">>
+    <<set $blastName = $("#blastNameInput").val()>>
+    <<set $outputString to setup.formatInput($outputString, "blastName", $blastName) >>
+    <<goto "blast4">>
+<</button>>
+
+
+
+
+:: blast4 {"position":"700,1000","size":"100,100"}
+In the BLAST file, do you anticipate protein IDs to be in the format genomeID-proteinID?
+This would be the case if you use the provided script to make a blast DB from a genome DB.
+
+
+[[YES|separateIDsYes]]
+[[NO|separateIDsNo]]
+
+
+
+:: endEarly {"position":"850,1375","size":"100,100"}
+You will see the parameters file on the next screen.
+First run the pipeline with this inputs YAML file, and inspect the output BLAST file. 
+When you are ready to continue, rerun this wizard with the exact same set of arguments as defined previously, and then rerun the pipeline with the new inputs YAML file and the -resume flag to use cached outputs.
+
+
+[[FINISH|printOutputs]]
+
+
+:: evalueYes {"position":"500,1500","size":"100,100"}
+Please enter an evalue threshold. Sequences with evalue <= this threshold will be kept.
+For scientific notation, please use e or E, e.g. 1e-30.
+
+
+<input id="evalueInput" type="text">
+<<button "Submit evalue threshold">>
+    <<set $evalueThreshold = $("#evalueInput").val()>>
+    <<set $outputString to setup.formatInput($outputString, "evalueThreshold", $evalueThreshold) >>
+    <<goto "filter2">>
+<</button>>
+
+
+:: filter1 {"position":"625,1375","size":"100,100"}
+Would you like to filter by evalue?
+
+
+[[YES|evalueYes]]
+[[NO|filter2]]
+
+
+:: filter2 {"position":"625,1625","size":"100,100"}
+Would you like to filter to the top hit (sequence with lowest evalue, keeping only one in the event of a tie) per ORGANISM?
+Different strains of the same bacteria are considered separate organisms.
+
+[[YES|organismYes]]
+[[NO|filter3]]
+
+
+
+
+
+
+:: filter3 {"position":"750,1750","size":"100,100"}
+<<set $filterByGenome to false>> /%initialize%/
+
+Would you like to filter to the top hit (sequence with lowest evalue, keeping only one in the event of a tie) per GENOME?
+
+
+[[YES|genomeYes]]
+[[NO|filter4]]
+
+
+
+
+:: filter4 {"position":"875,1875","size":"100,100"}
+<<set $filterBySynteny to false>> /%initialize%/
+
+Would you like to filter by synteny context?
+
+
+[[YES|synteny1]]
+[[NO|retrieveMetadata]]
+
+
+
+
+:: filterNow {"position":"750,1250","size":"100,100"}
+You may specify in advance the filtering thresholds for the BLAST hits for your query sequence according to certain criteria.
+But would you like to inspect the BLAST hits manually before filtering?
+
+
+[[YES|endEarly]]
+[[NO|filter1]]
+
+
+:: finalizeOutputs {"position":"725,1500","size":"100,100"}
+Paste the text on the next screen into a text file.
+If your text file is named inputs.yaml, then you can use it by running: nextflow run main.nf -params-file inputs.yaml
+
+[[NEXT|printOutputs]]
+
+
+
+
+:: genomeYes {"position":"750,1875","size":"100,100"}
+<<set $filterByGenome to true>>
+<<set $outputString to setup.formatInput($outputString, "filterByGenome", "true") >>
+<<goto "filter4">>
+
+
+:: hasGenomeIDsNo {"position":"1125,2250","size":"100,100"}
+In that case, you will need to retrieve metadata through NCBI esearch.
+Please enter your email so that NCBI can contact you if there's a problem with your requests.
+
+<input id="entrezEmailInput" type="text">
+<<button "Submit email">>
+    <<set $entrezEmail = $("#entrezEmailInput").val()>>
+    <<set $outputString to setup.formatInput($outputString, "entrezEmail", $entrezEmail) >>
+    <<goto "align">>
+<</button>>
+
+
+:: hasGenomeIDsYes {"position":"1000,2250","size":"100,100"}
+Please enter the path to the genome DB.
+
+
+<input id="genomeDBmetadataInput" type="text">
+<<button "Submit genome DB">>
+    <<set $genomeDBmetadata = $("#genomeDBmetadataInput").val()>>
+    <<set $outputString to setup.formatInput($outputString, "genomeDBmetadata", $genomeDBmetadata) >>
+    <<goto "align">>
+<</button>>
+
+
+
+
+
+
+:: organismYes {"position":"625,1750","size":"100,100"}
+<<set $outputString to setup.formatInput($outputString, "filterByOrganism", "true") >>
+<<goto "filter3">>
+
+
+
+:: pidentYes {"position":"875,2875","size":"100,100"}
+Please specify a pident threshold as a number from 0 to 100.
+The filtering will keep only synteny hit sequences with pident >= this threshold in the intersection BLAST.
+
+
+<input id="intersectPidentInput" type="text">
+<<button "Submit pident threshold">>
+    <<set $intersectPident = $("#intersectPidentInput").val()>>
+    <<set $outputString to setup.formatInput($outputString, "intersectPident", $intersectPident) >>
+    <<goto "synteny8">>
+<</button>>
+
+
+:: printOutputs {"position":"850,1625","size":"100,100"}
+$outputString
+
+
+:: retrieveMetadata {"position":"1000,2000","size":"100,100"}
+<<if ($filterByGenome === true ) and ($separateIDs === false) >> 
+ Earlier, you indicated that you would like to filter by genome ID, and that there are no genome IDs encoded in your BLAST database.
+As a result, you will need to retrieve metadata for this dataset. 
+If you have previously retrieved metadata for your dataset using this pipeline,
+you can provide a path to it using the --existingMetadata option when calling nextflow run, but please provide responses to the following questions.
+[[NEXT|retrieveMetadata2]]
+<<elseif $filterBySynteny === true>> 
+Synteny search provides metadata, so it is not necessary to retrieve metadata separately under most circumstances. Proceeding to the next set of inputs.
+[[NEXT|align]]
+<<else>>
+[[NEXT|retrieveMetadata2]]
+<</if>>
+
+
+:: retrieveMetadata2 {"position":"1000,2125","size":"100,100"}
+<<if $separateIDs === true>>
+You previously indicated that genome IDs are encoded in your BLAST db, which means that it may be possible to perform a local database search.
+This is generally preferable to using NCBI esearch, which is slower due to rate-limiting and has the chance to disconnect and fail.
+Do you have a genome database that you can use for this search?
+This might be the database you built the blast DB from using our provided script, or a collection of genomes downloaded using https://github.com/kblin/ncbi-genome-download encompassing all genomes assembly accessions in your blast DB.
+Expected format: a directory in which all subdirectories are named after assembly accessions and each subdirectory contains a .gbff.gz file (unzipped is fine too).
+[[YES|hasGenomeIDsYes]]
+[[NO|hasGenomeIDsNo]]
+<<else>>
+You will need to retrieve metadata through NCBI esearch.
+Please enter your email so that NCBI can contact you if there's a problem with your requests.
+<input id="entrezEmailInput" type="text">
+<<button "Submit email">>
+    <<set $entrezEmail = $("#entrezEmailInput").val()>>
+    <<set $outputString to setup.formatInput($outputString, "entrezEmail", $entrezEmail) >>
+    <<goto "align">>
+<</button>>
+<</if>>
+
+
+
+
+
+
+:: separateIDsNo {"position":"825,1125","size":"100,100"}
+<<set $separateIDs to false>>
+<<set $outputString to $outputString + "\n" >>
+<<goto "filterNow">>
+
+
+:: separateIDsYes {"position":"700,1125","size":"100,100"}
+<<set $separateIDs to true>>
+<<set $outputString to setup.formatInput($outputString, "separateIDs", "true") + "\n" >>
+<<goto "filterNow">>
+
+
+:: synteny1 {"position":"875,2000","size":"100,100"}
+<<set $filterBySynteny to true>>
+
+Please prepare inputs after referring to Pynteny documentation and this pipeline's provided example synteny search inputs.
+           
+Please enter the path to the genome database directory in which to perform the synteny searches. 
+This is a directory in which all subdirectories are named after assembly accessions, and each subdirectory contains a .gbff.gz file (unzipped is fine too).
+
+
+<input id="genomeDBsyntenyInput" type="text">
+<<button "Submit genome database">>
+    <<set $genomeDBsynteny = $("#genomeDBsyntenyInput").val()>>
+    <<set $outputString to setup.formatInput($outputString, "genomeDBsynteny", $genomeDBsynteny) >>
+    <<goto "synteny2">>
+<</button>>
+
+
+
+
+
+:: synteny2 {"position":"875,2125","size":"100,100"}
+Please enter the path to a tab-separated table in which column 1 contains synteny structures (refer to documentation for 'pynteny search'), and column 2 contains the corresponding output directory names as RELATIVE paths.
+
+
+<input id="syntenyInputInput" type="text">
+<<button "Submit synteny input file">>
+    <<set $syntenyInput = $("#syntenyInputInput").val()>>
+    <<set $outputString to setup.formatInput($outputString, "syntenyInput", $syntenyInput) >>
+    <<goto "synteny3">>
+<</button>>
+
+
+:: synteny3 {"position":"875,2250","size":"100,100"}
+Please enter the path to a file that lists HMMs from your query sequence (do NOT include HMMs from the surrounding genes)
+
+
+<input id="hmmsListInput" type="text">
+<<button "Submit HMM list file">>
+    <<set $hmmsList = $("#hmmsListInput").val()>>
+    <<set $outputString to setup.formatInput($outputString, "hmmsList", $hmmsList) >>
+    <<goto "synteny4">>
+<</button>>
+
+
+:: synteny4 {"position":"875,2375","size":"100,100"}
+Please enter the path to the HMM database directory.
+
+
+<input id="hmmsDirInput" type="text">
+<<button "Submit HMM directory">>
+    <<set $hmmsDir = $("#hmmsDirInput").val()>>
+    <<set $outputString to setup.formatInput($outputString, "hmmsDir", $hmmsDir) >>
+    <<goto "synteny5">>
+<</button>>
+
+
+:: synteny5 {"position":"875,2500","size":"100,100"}
+Please enter the path to the HMM metadata table.
+
+
+<input id="hmmsMetadataInput" type="text">
+<<button "Submit HMM metadata table">>
+    <<set $hmmsMetadata = $("#hmmsMetadataInput").val()>>
+    <<set $outputString to setup.formatInput($outputString, "hmmsMetadata", $hmmsMetadata) >>
+    <<goto "synteny6">>
+<</button>>
+
+
+
+
+
+
+:: synteny6 {"position":"875,2625","size":"100,100"}
+After the synteny context search is performed, the outputs of that search will be intersected with the set of sequences from the BLAST (with any filtering specified earlier),
+and the intersection will return the subset of sequences from the synteny context search that closely resemble sequences among the BLAST hits.
+More specifically, the synteny hits will be blasted against a database made from the BLAST hits.
+
+You may now specify filtering thresholds for pident (percent identity) and qcovs (query coverage per subject) for this intersection blast.
+Based on these thresholds, a subset of the hits from the synteny search (i.e. homologs that appear in the specified synteny context) will be kept.
+Refer to BLAST documentation: https://www.ncbi.nlm.nih.gov/books/NBK279684/#appendices.Options_for_the_commandline_a
+
+[[NEXT|synteny7]]
+
+
+
+
+:: synteny7 {"position":"875,2750","size":"100,100"}
+Would you like to specify a pident threshold different from the default of 99?
+
+[[YES|pidentYes]]
+[[NO|synteny8]]
+            
+
+
+
+
+
+:: synteny8 {"position":"1000,2875","size":"100,100"}
+Would you like to specify a qcovs threshold different from the default of 90?
+
+
+[[YES|synteny9]]
+[[NO|retrieveMetadata]]
+
+
+
+
+:: synteny9 {"position":"1000,3000","size":"100,100"}
+Please specify a qcovs threshold as a number from 0 to 100. 
+The filtering will keep only synteny hit sequences with qcovs >= this threshold in the intersection BLAST. 
+
+
+<input id="intersectQcovsInput" type="text">
+<<button "Submit qcovs threshold">>
+    <<set $intersectQcovs = $("#intersectQcovsInput").val()>>
+    <<set $outputString to setup.formatInput($outputString, "intersectQcovs", $intersectQcovs) >>
+    <<goto "retrieveMetadata">>
+<</button>>
+
+
+
+:: StoryScript [script]
+setup.trimInput = function(input) {
+  // remove surrounding whitespace
+  let trimmed = input.trim();
+
+  // remove surrounding quotes if present
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
+    (trimmed.startsWith('`') && trimmed.endsWith('`'))
+  ) {
+    trimmed = trimmed.slice(1, -1);
+  }
+
+  return trimmed;
+}
+
+
+setup.formatInput = function(currentOutput, varName, input) {
+  let outputString = currentOutput + varName + ": " + setup.trimInput(input) + "\n";
+  return outputString
+}
