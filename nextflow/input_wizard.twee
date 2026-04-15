@@ -54,7 +54,7 @@ Please enter the path to the FASTA containing your query sequence. Ensure that t
 
 
 :: blast2 {"position":"700,750","size":"100,100"}
-Please enter the path to the FASTA containing your query sequence. Ensure that the FASTA contains only one sequence.
+Please enter the path to the directory containing the BLAST db files.
 
 
 <input id="blastPathInput" type="text">
