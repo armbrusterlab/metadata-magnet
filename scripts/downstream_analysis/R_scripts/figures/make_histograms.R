@@ -29,7 +29,7 @@ save_histograms <- function(df, group_var, outdir, pdf_suffix, column_name = "se
             labs(x = column_name, y = "Count", title = glue("{group_var}: {unique(.x[[group_var]])[1]}; n: {nrow(.x)}")) +
             scale_color_manual(name = "Values",
                                values = c(reference_length = "blue", mean = "red", median = "green"),
-                               labels = c(reference_length = glue("{reference_label} = {reference_length}"),
+                               labels = c(reference_length = str_wrap(glue("{reference_label} = {reference_length}"), width = 15, whitespace_only=FALSE),
                                           mean = glue("Mean = {round(mean(.x[[column_name]], na.rm = TRUE), 1)}"),
                                           median = glue("Median = {median(.x[[column_name]], na.rm = TRUE)}"))) +
             theme(legend.text = element_text(size = 8)) + # in case the reference_label is long
@@ -138,7 +138,7 @@ histograms_by_source <- function(df, outdir, column_name = "sequence_length", re
       labs(x = column_name, y = "Count", title = glue("{group_var}: Overall histogram; n: {nrow(df)}")) +
       scale_color_manual(name = "Values",
                            values = c(reference_length = "blue", mean = "red", median = "green"),
-                           labels = c(reference_length = glue("{reference_label} = {reference_length}"),
+                           labels = c(reference_length = str_wrap(glue("{reference_label} = {reference_length}"), width = 15, whitespace_only=FALSE),
                            mean = glue("Mean = {round(mean(df[[column_name]], na.rm = TRUE), 1)}"),
                            median = glue("Median = {median(df[[column_name]], na.rm = TRUE)}"))) +
       theme(legend.text = element_text(size = 8))

@@ -12,25 +12,6 @@ process processMetadata {
     path "benchmarking_afterMetadataProcessing.txt", emit: benchmark
 
     script:
-    // inputBasename = input_file.simpleName
-
-    // projDir="${workflow.projectDir}"
-    // outname="${inputBasename}_processedMetadata.blast"
-
-    // cp ${input_file} "\$outname"
-    // bash "\$projDir/../scripts/metadata_processing_wrapper.sh" -f "\$outname" -c ${categoryFile} -s ${subcategoryFile}
-
-// 
-
-    // projDir="${workflow.projectDir}"
-    // outname="${inputBasename}_processedMetadata.blast"
-
-    // newBenchmarkFile="${inputBasename}_benchmarking_afterMetadataProcessing.txt"
-    // cat ${benchmark_file} > \$newBenchmarkFile
-    // echo "" >> \$newBenchmarkFile
-
-    // cp ${input_file} "\$outname"
-    // bash "\$projDir/../scripts/metadata_processing_wrapper.sh" -f "\$outname" -c ${categoryFile} -s ${subcategoryFile} >> \$ newBenchmarkFile
     """
     projDir="${workflow.projectDir}"
 
@@ -57,20 +38,3 @@ process processMetadata {
     // wc -l "${inputBasename}_processedMetadata.blast" >> "${inputBasename}_processedMetadata.blast" 
     // """
 }
-
-// process collectMetadataBenchmarking {
-//     input:
-//     path benchmark_file
-//     path metadataBenchmarking
-
-//     output:
-//     path "benchmarking_metadata.txt"
-
-//     script:
-//     """
-//     newBenchmarkFile="benchmarking_metadata.txt"
-//     cat "${benchmark_file}" > \$newBenchmarkFile
-//     echo "" >> \$newBenchmarkFile
-//     cat ${metadataBenchmarking} >> \$newBenchmarkFile 
-//     """
-// }

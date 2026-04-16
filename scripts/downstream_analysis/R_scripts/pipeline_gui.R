@@ -92,7 +92,8 @@ ui <- navbarPage("Pipeline GUI",
       fluidPage(
         selectInput("fig_script", "Select figure script:",
                     choices = c("make_histograms.R",
-                                "make_violin_plots.R")),
+                                "make_violin_plots.R",
+                                "make_pie_charts.R")),
         # inputs for make_histograms.R
         conditionalPanel("input.fig_script == 'make_histograms.R'",
           selectInput("hist_column", "Column for histogram:",
@@ -119,6 +120,18 @@ ui <- navbarPage("Pipeline GUI",
                       selected = "boxplot"),
         ),
         
+        # inputs for make_pie_charts.R
+        conditionalPanel("input.fig_script == 'make_pie_charts.R'",
+                         selectInput("group_var1", "Categorical column to color pie charts by:",
+                                     choices = c("category", "subcategory", "genus", "species"),
+                                     selected = "genus"),
+                         selectInput("group_var2", "Categorical column to facet plots by:",
+                                     choices = c("category", "subcategory", "genus", "species"),
+                                     selected = "category"),
+                         numericInput("pie_width", "Width (inches):", value = 8, min = 1, max = 20, step = 0.5),
+                         numericInput("pie_height", "Height (inches):", value = 6, min = 1, max = 20, step = 0.5)
+        ),
+        
         # NEW: inputs for make_sequence_logos.R
         conditionalPanel("input.fig_script == 'make_sequence_logos.R' && input.fasta_type == 'Aligned'",
           # Reference sequence input - only show if not already submitted
@@ -135,8 +148,8 @@ ui <- navbarPage("Pipeline GUI",
           selectInput("group_var", "Group by:",
                       choices = c("category", "genus"),
                       selected = "category"),
-          numericInput("logo_width", "Width (inches):", value = 8, min = 1, max = 20, step = 0.5),
-          numericInput("logo_height", "Height (inches):", value = 6, min = 1, max = 20, step = 0.5)
+          numericInput("logo_width", "Width (inches):", value = 8, min = 1, max = 100, step = 0.5),
+          numericInput("logo_height", "Height (inches):", value = 6, min = 1, max = 100, step = 0.5)
         ),
         
         actionButton("run_figures", "Run figure script"),
@@ -316,11 +329,13 @@ server <- function(input, output, session) {
       updateSelectInput(session, "fig_script",
                         choices = c("make_histograms.R",
                                     "make_violin_plots.R",
+                                    "make_pie_charts.R",
                                     "make_sequence_logos.R"))
     } else {
       updateSelectInput(session, "fig_script",
                         choices = c("make_histograms.R",
-                                    "make_violin_plots.R"))
+                                    "make_violin_plots.R",
+                                    "make_pie_charts.R"))
     }
   })
 
@@ -1052,7 +1067,7 @@ server <- function(input, output, session) {
       column_name <- NULL
     }
     
-    if (fig_script != "make_sequence_logos.R" && is.null(column_name)) {
+    if (fig_script %in% c("make_histograms.R", "make_violin_plots.R") && is.null(column_name)) {
       append_log("Error: No column selected")
       return()
     }
@@ -1113,7 +1128,27 @@ server <- function(input, output, session) {
         image_refresh_trigger(image_refresh_trigger() + 1)
         append_log("Image list refreshed automatically.")
         
-      } else if (fig_script == "make_sequence_logos.R") { # sequence logos
+      } else if (fig_script == "make_pie_charts.R") {
+        source(script_path, local = TRUE)
+        
+        # Prepare arguments for make_pie_charts
+        args <- list(
+          df = df,
+          outdir = file.path(input$outdir, "figures"),
+          group_var1 = input$group_var1,
+          group_var2 = input$group_var2,
+          width = input$pie_width,
+          height = input$pie_height
+        )
+        
+        # Call make_pie_charts with the appropriate arguments
+        do.call(make_pie_charts, args)
+        append_log(glue("Pie charts generated for each {input$group_var2}, colored by {input$group_var1}"))
+        
+        # Trigger image list refresh after generating figures
+        image_refresh_trigger(image_refresh_trigger() + 1)
+        append_log("Image list refreshed automatically.")
+      }else if (fig_script == "make_sequence_logos.R") { # sequence logos
         source(script_path, local = TRUE)
         
         # Check if reference sequence is available

@@ -1,16 +1,9 @@
 #!/usr/bin/env nextflow
 include { runBlast } from './modules/runBlast.nf'
-// include { foo; bar} from './modules/filtering.nf'
 include { filterToEvalue; filterToOrganism; filterToGenome as filterToGenome_noMetadata; filterToGenome as filterToGenome_withMetadata; filterSynteny; collectSyntenyBenchmarking } from './modules/filtering.nf' 
-// include { foo_metadata as foo_metadata_beforeFiltering; foo_metadata as foo_metadata_afterFiltering; bar_metadata } from './modules/retrieveMetadata.nf'
 include { retrieveMetadata as retrieveMetadata_beforeFiltering; retrieveMetadata as retrieveMetadata_afterFiltering } from './modules/retrieveMetadata.nf'
 include { processMetadata } from './modules/processMetadata.nf' 
 include { produceFasta; alignFasta } from './modules/processFasta.nf' 
-// include { FILTER1 } from '/home/kcw2/test_scripts/nextflow_tests/modules/filter1.nf'
-// include { FILTER2 } from '/home/kcw2/test_scripts/nextflow_tests/modules/filter2.nf'
-// include { filter3NeedSignal as filter3_noMetadata; filter3NeedSignal as filter3_withMetadata } from '/home/kcw2/test_scripts/nextflow_tests/modules/filter3.nf'
-// include { filter4WithMultipleOutputs } from '/home/kcw2/test_scripts/nextflow_tests/modules/filter4.nf'
-// include { FINAL } from '/home/kcw2/test_scripts/nextflow_tests/modules/finalStep.nf'
 
 params {
     // required inputs for initial blast
