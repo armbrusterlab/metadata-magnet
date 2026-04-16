@@ -200,12 +200,16 @@ ui <- navbarPage("Pipeline GUI",
           selectInput("allele_seq_colname", "Sequence column:",
                       choices = NULL),
           selectInput("allele_group_var", "Group by:",
-                      choices = c("category", "genus"),
+                      choices = c("category", "subcategory", "genus", "species"),
                       selected = "category"),
           uiOutput("allele_residue_ui"),  # Dynamic residue selection
           selectInput("adjust_method", "Adjustment method:",
                       choices = c("", "holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
-                      selected = "fdr")
+                      selected = "fdr"),
+          radioButtons("forceChisqString", "Force Pearson's chi-square test over Fisher's Exact Test?",
+                       choices = c("Yes", "No"),
+                       selected = "No",
+                       inline = TRUE),
         ),
         
         # Inputs for other scripts can be added similarly
@@ -951,10 +955,14 @@ server <- function(input, output, session) {
           site = adj_site,  # Pass the pre-adjusted site
           residue = input$allele_residue,
           group_var = input$allele_group_var,
-          seq_colname = input$allele_seq_colname
+          seq_colname = input$allele_seq_colname,
+          forceChisq = (input$forceChisqString == "Yes")
         )
-        if (input$adjust_method != "") {
-          args <- c(args, input$adjust_method)
+        # Only add adjust parameter if it's not empty
+        if (!is.null(input$adjust_method) && input$adjust_method != "") {
+          args$adjust <- input$adjust_method
+        } else {
+          args$adjust <- "fdr"  # Default value
         }
         
         test_output <- capture.output({

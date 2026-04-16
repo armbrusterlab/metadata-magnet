@@ -2,8 +2,7 @@ library(dplyr)
 library(tidyr)
 library(rstatix)
 
-test_alleleFreqs_within_categories <- function(df, site, residue, group_var = "category", seq_colname = "sequence", adjust = "fdr") {
-  # Made a more concise version.
+test_alleleFreqs_within_categories <- function(df, site, residue, group_var = "category", seq_colname = "sequence", adjust = "fdr", forceChisq = FALSE) {
   # df[[seq_colname]] is assumed to contain aligned sequences
   # site is assumed to be a single int, pre-adjusted upon entry into the GUI
   adj_site <- site
@@ -33,7 +32,7 @@ test_alleleFreqs_within_categories <- function(df, site, residue, group_var = "c
   dimnames(xtab) <- list(allele_observed = c("yes", "no"), group = groups)
   print(xtab)
   
-  ### NEW: Calculate overall statistics for enrichment tests
+  ### Calculate overall statistics for enrichment tests
   total_sequences <- sum(xtab)
   total_allele <- sum(xtab["yes", ])
   overall_prop <- total_allele / total_sequences
@@ -50,57 +49,140 @@ test_alleleFreqs_within_categories <- function(df, site, residue, group_var = "c
     observed_alleles = xtab["yes", ],
     expected_alleles = colSums(xtab) * overall_prop,
     observed_prop = xtab["yes", ] / colSums(xtab),
-    p_value_fisher_2x2 = NA
+    p_value = NA,
+    test_used = NA
   )
   
   # Perform tests for each category
   for(i in 1:nrow(enrichment_results)) {    
-    # 2x2 Fisher's exact test for this category vs all others
+    # 2x2 contingency table for this category vs all others
     category_A <- enrichment_results$observed_alleles[i]
     category_nonA <- enrichment_results$total_sequences[i] - category_A
     other_A <- total_allele - category_A
     other_nonA <- (total_sequences - enrichment_results$total_sequences[i]) - other_A
     
-    fisher_2x2 <- fisher.test(
-      matrix(c(category_A, category_nonA, other_A, other_nonA), nrow = 2),
-      alternative = "greater"
-    )
-    enrichment_results$p_value_fisher_2x2[i] <- fisher_2x2$p.value
+    cont_table <- matrix(c(category_A, category_nonA, other_A, other_nonA), nrow = 2)
+    
+    # Check expected frequencies for chi-square test
+    expected <- chisq.test(cont_table, correct = FALSE)$expected
+    # print("Expected frequencies for chi-square test:")
+    # print(expected)
+    
+    # Choose test based on expected frequencies
+    if (all(expected >= 5) | forceChisq) {
+      # Use Pearson's chi-square test with continuity correction
+      test_result <- chisq.test(cont_table, correct = TRUE)
+      enrichment_results$test_used[i] <- "Chi-square"
+      enrichment_results$p_value[i] <- test_result$p.value
+    } else {
+      # Fall back to Fisher's exact test
+      test_result <- fisher.test(cont_table, alternative = "greater")
+      enrichment_results$test_used[i] <- "Fisher's exact"
+      enrichment_results$p_value[i] <- test_result$p.value
+    }
   }
   
   # Adjust p-values for multiple testing
-  enrichment_results$p_adj_fisher_2x2 <- p.adjust(enrichment_results$p_value_fisher_2x2, method = adjust)
+  enrichment_results$p_adj <- p.adjust(enrichment_results$p_value, method = adjust)
   
   # Add significance flags
-  enrichment_results$significant_fisher_2x2 <- enrichment_results$p_adj_fisher_2x2 < 0.05
+  enrichment_results$significant <- enrichment_results$p_adj < 0.05
   
   # Format and print results
   enrichment_results_formatted <- enrichment_results |>
     mutate(
       observed_prop = round(observed_prop, 4),
       expected_alleles = round(expected_alleles, 2),
-      p_value_fisher_2x2 = format.pval(p_value_fisher_2x2, digits = 3),
-      p_adj_fisher_2x2 = format.pval(p_adj_fisher_2x2, digits = 3)
+      p_value = format.pval(p_value, digits = 3),
+      p_adj = format.pval(p_adj, digits = 3)
     )
   
   row.names(enrichment_results_formatted) <- NULL
   print(enrichment_results_formatted)
   
+  # Determine which test to use for the overall test
+  # Check expected frequencies for the full contingency table
+  full_expected <- chisq.test(xtab, correct = FALSE)$expected
   
-  # Overall test - is there any significant variation?
-  cat("\nFisher's exact test:\n")
-  print(test <- fisher_test(xtab, detailed = TRUE)) #, alternative = "greater")) # since this is just to determine whether there's variation between the groups, would it even make sense to use alternative = "greater" here?
-  p <- test$p
+  cat("\n=== OVERALL ASSOCIATION TEST ===\n")
+  if (all(full_expected >= 5) | forceChisq) {
+    # Use Pearson's chi-square test
+    cat("Using Pearson's Chi-square test\n")
+    cat("Expected frequencies:\n")
+    print(round(full_expected, 2))
+    
+    test <- chisq.test(xtab, correct = FALSE)
+    cat("\nChi-square test results:\n")
+    cat(glue("X-squared = {round(test$statistic, 3)}, df = {test$parameter}, p-value = {format.pval(test$p.value, digits = 3)}"))
+    p <- test$p.value
+    
+    # Also show standardized residuals for significant results
+    if (p < 0.05) {
+      cat("\n\nStandardized residuals (|residual| > 2 indicate significant contribution):\n")
+      residuals <- test$stdres
+      print(round(residuals, 2))
+    }
+  } else {
+    # Fall back to Fisher's exact test
+    cat("Using Fisher's exact test (some expected frequencies < 5)\n")
+    cat("Expected frequencies:\n")
+    print(round(full_expected, 2))
+    
+    test <- fisher_test(xtab, detailed = TRUE)
+    cat("\nFisher's exact test results:\n")
+    print(test)
+    p <- test$p
+  }
   
   if (p < 0.05) {
-    cat("\np from Fisher's exact test is significant; conducting pairwise comparisons\n")
+    cat("\nOverall test is significant; conducting pairwise comparisons\n")
+    
     # Pairwise tests - which specific pairs are different?
-    cat("Pairwise Fisher's tests:\n")
-    pairwise_results <- pairwise_fisher_test(xtab, p.adjust.method = adjust, alternative = "greater")
+    cat("\n=== PAIRWISE COMPARISONS ===\n")
+    cat(glue("Using {ifelse((all(full_expected >= 5) | forceChisq), 'chi-square', 'Fisher\\'s exact')} tests for pairwise comparisons\n"))
+    
+    # Get all pairwise combinations
+    n_groups <- length(groups)
+    pairwise_results <- data.frame()
+    
+    for(i in 1:(n_groups-1)) {
+      for(j in (i+1):n_groups) {
+        # Create 2x2 table for these two groups only
+        pair_table <- xtab[, c(i, j)]
+        
+        # Check expected frequencies for this pair
+        pair_expected <- chisq.test(pair_table, correct = FALSE)$expected
+        
+        # Choose test based on expected frequencies
+        if (all(pair_expected >= 5) | forceChisq) {
+          test_result <- chisq.test(pair_table, correct = TRUE)
+          test_name <- "Chi-square"
+          p_val <- test_result$p.value
+        } else {
+          test_result <- fisher.test(pair_table, alternative = "two.sided")
+          test_name <- "Fisher's exact"
+          p_val <- test_result$p.value
+        }
+        
+        pairwise_results <- rbind(pairwise_results, data.frame(
+          group1 = groups[i],
+          group2 = groups[j],
+          p = p_val,
+          test_used = test_name,
+          stringsAsFactors = FALSE
+        ))
+      }
+    }
+    
+    # Adjust p-values for multiple comparisons
+    pairwise_results$p_adj <- p.adjust(pairwise_results$p, method = adjust)
+    pairwise_results$significant <- pairwise_results$p_adj < 0.05
+    
+    # Print pairwise results
     print(pairwise_results)
     
     # Identify significantly different pairs
-    sig_pairs <- pairwise_results |> filter(p.adj < 0.05)
+    sig_pairs <- pairwise_results |> filter(significant)
     if(nrow(sig_pairs) > 0) {
       cat("\nSignificantly different category pairs (adjusted p < 0.05):\n")
       print(sig_pairs)
@@ -108,25 +190,25 @@ test_alleleFreqs_within_categories <- function(df, site, residue, group_var = "c
       cat("\nNo significantly different category pairs after adjustment\n")
     }
   } else {
-    cat("\nOverall p was not significant\n")
+    cat("\nOverall test was not significant\n")
   }
   
   ### Summary of findings
   cat("\n=== SUMMARY ===\n")
-  cat("Categories significantly enriched for", residue, "allele:\n")
+  cat(glue("Categories significantly enriched for {residue} allele (using {ifelse((all(full_expected >= 5) | forceChisq), 'Chi-square', 'Fisher\\'s exact')} enrichment tests):\n"))
   enriched_categories <- enrichment_results |> 
-    filter(significant_fisher_2x2)
+    filter(significant)
   if(nrow(enriched_categories) > 0) {
     for(i in 1:nrow(enriched_categories)) {
       cat("  -", enriched_categories$category[i], 
           "(observed:", enriched_categories$observed_alleles[i], "/", enriched_categories$total_sequences[i],
           "=", round(enriched_categories$observed_prop[i] * 100, 1), "%; expected:", 
           round(enriched_categories$expected_alleles[i], 1), 
-          ", p-value adjusted by", adjust, "is (p =", formatC(enriched_categories$p_adj_fisher_2x2[i], format = "e", digits = 2), ") )\n")
+          ", test:", enriched_categories$test_used[i],
+          ", p-value adjusted by", adjust, "is (p =", formatC(enriched_categories$p_adj[i], format = "e", digits = 2), ") )\n")
           
       # additional print statements to facilitate data entry
-      cat(glue("{enriched_categories$category[i]} (p = {formatC(enriched_categories$p_adj_fisher_2x2[i], format = 'e', digits = 2)}; {round(enriched_categories$observed_prop[i] * 100, 1)}%)"), "\n") 
-      # cat(glue("expected {round(enriched_categories$expected_alleles[i] / enriched_categories$total_sequences[i] * 100, 1)}%"))
+      cat(glue("{enriched_categories$category[i]} (p = {formatC(enriched_categories$p_adj[i], format = 'e', digits = 2)}; {round(enriched_categories$observed_prop[i] * 100, 1)}%)"), "\n") 
       cat(glue("expected {round(overall_prop * 100, 1)}%"), "\n\n")
     }
   } else {
@@ -137,181 +219,13 @@ test_alleleFreqs_within_categories <- function(df, site, residue, group_var = "c
   invisible(list(
     contingency_table = xtab,
     enrichment_results = enrichment_results,
-    overall_fisher_p = p,
+    overall_p_value = p,
+    overall_test_used = ifelse((all(full_expected >= 5) | forceChisq), "Chi-square", "Fisher's exact"),
     total_sequences = total_sequences,
     total_allele = total_allele,
     overall_proportion = overall_prop
   ))
 }
-
-#test_alleleFreqs_within_categories <- function(df, site, residue, group_var = "category", seq_colname = "sequence", adjust = "fdr") {
-#  # df[[seq_colname]] is assumed to contain aligned sequences
-#  # site is assumed to be a single int, pre-adjusted upon entry into the GUI
-#  adj_site <- site
-#
-#  ### make contingency table for pairwise Fisher's test
-#  summary_df <- df |> 
-#    mutate(allele = substr(df[[seq_colname]], adj_site, adj_site)) |> 
-#    mutate(is_allele = (allele == residue)) |> 
-#    group_by(!!sym(group_var), is_allele) |> 
-#    summarize(n = n(), .groups = "drop") 
-#  
-#  # Ensure all combinations of group_var and is_allele exist
-#  summary_df <- summary_df |>
-#    complete(!!sym(group_var), is_allele = c(TRUE, FALSE), fill = list(n = 0))
-#
-#  # get group names in the same order as in summary_df
-#  groups <- summary_df |> filter(is_allele == TRUE) |> pull(!!sym(group_var))
-#  observed <- summary_df |> filter(is_allele == TRUE) |> pull(n)
-#  not_observed <- summary_df |> filter(is_allele == FALSE) |> pull(n)
-#  
-#  xtab <- as.table(rbind(observed, not_observed))
-#  dimnames(xtab) <- list(allele_observed = c("yes", "no"), group = groups)
-#  print(xtab)
-#  
-#  ### NEW: Calculate overall statistics for enrichment tests
-#  total_sequences <- sum(xtab)
-#  total_allele <- sum(xtab["yes", ])
-#  overall_prop <- total_allele / total_sequences
-#  
-#  cat("\n=== OVERALL STATISTICS ===\n")
-#  cat("Total sequences:", total_sequences, "\n")
-#  cat("Total", residue, "alleles:", total_allele, "\n")
-#  cat("Overall proportion:", round(overall_prop, 4), "(", round(overall_prop * 100, 2), "%)\n")
-#  
-#  ### NEW: Binomial enrichment tests for each category
-#  # The binomial test asks: "If A's are randomly distributed, what's the probability of seeing 3 or more A's in a sample of 66 sequences?"
-#  cat("\n=== BINOMIAL ENRICHMENT TESTS ===\n")
-#  enrichment_results <- data.frame(
-#    category = groups,
-#    total_sequences = colSums(xtab),
-#    observed_alleles = xtab["yes", ],
-#    expected_alleles = colSums(xtab) * overall_prop,
-#    observed_prop = xtab["yes", ] / colSums(xtab),
-#    p_value_binomial = NA,
-#    p_value_fisher_2x2 = NA
-#  )
-#  
-#  # Perform binomial tests for each category
-#  for(i in 1:nrow(enrichment_results)) {
-#    # Binomial test for enrichment (one-sided)
-#    binom_test <- binom.test(
-#      x = enrichment_results$observed_alleles[i],
-#      n = enrichment_results$total_sequences[i],
-#      p = overall_prop,
-#      alternative = "greater"
-#    )
-#    enrichment_results$p_value_binomial[i] <- binom_test$p.value
-#    
-#    # 2x2 Fisher's exact test for this category vs all others
-#    category_A <- enrichment_results$observed_alleles[i]
-#    category_nonA <- enrichment_results$total_sequences[i] - category_A
-#    other_A <- total_allele - category_A
-#    other_nonA <- (total_sequences - enrichment_results$total_sequences[i]) - other_A
-#    
-#    fisher_2x2 <- fisher.test(
-#      matrix(c(category_A, category_nonA, other_A, other_nonA), nrow = 2),
-#      alternative = "greater"
-#    )
-#    enrichment_results$p_value_fisher_2x2[i] <- fisher_2x2$p.value
-#  }
-#  
-#  # Adjust p-values for multiple testing
-#  enrichment_results$p_adj_binomial <- p.adjust(enrichment_results$p_value_binomial, method = adjust)
-#  enrichment_results$p_adj_fisher_2x2 <- p.adjust(enrichment_results$p_value_fisher_2x2, method = adjust)
-#  
-#  # Add significance flags
-#  enrichment_results$significant_binomial <- enrichment_results$p_adj_binomial < 0.05
-#  enrichment_results$significant_fisher_2x2 <- enrichment_results$p_adj_fisher_2x2 < 0.05
-#  
-#  # Format and print results
-#  enrichment_results_formatted <- enrichment_results |>
-#    mutate(
-#      observed_prop = round(observed_prop, 4),
-#      expected_alleles = round(expected_alleles, 2),
-#      p_value_binomial = format.pval(p_value_binomial, digits = 3),
-#      p_adj_binomial = format.pval(p_adj_binomial, digits = 3),
-#      p_value_fisher_2x2 = format.pval(p_value_fisher_2x2, digits = 3),
-#      p_adj_fisher_2x2 = format.pval(p_adj_fisher_2x2, digits = 3)
-#    )
-#  
-#  row.names(enrichment_results_formatted) <- NULL
-#  print(enrichment_results_formatted)
-#  
-#  ### Original tests for overall variation
-#  cat("\n=== OVERALL ASSOCIATION TESTS ===\n")
-#  cat("Chi-squared test of independence:")
-#  print(chisq_test(xtab))
-#  
-#  # Overall test - is there any significant variation?
-#  cat("\nFisher's exact test:\n")
-#  print(test <- fisher_test(xtab, detailed = TRUE)) #, alternative = "greater")) # since this is just to determine whether there's variation between the groups, would it even make sense to use alternative = "greater" here?
-#  p <- test$p
-#  
-#  if (p < 0.05) {
-#    cat("\np from Fisher's exact test is significant; conducting pairwise comparisons\n")
-#    # Pairwise tests - which specific pairs are different?
-#    cat("Pairwise Fisher's tests:\n")
-#    pairwise_results <- pairwise_fisher_test(xtab, p.adjust.method = adjust, alternative = "greater")
-#    print(pairwise_results)
-#    
-#    # Identify significantly different pairs
-#    sig_pairs <- pairwise_results |> filter(p.adj < 0.05)
-#    if(nrow(sig_pairs) > 0) {
-#      cat("\nSignificantly different category pairs (adjusted p < 0.05):\n")
-#      print(sig_pairs)
-#    } else {
-#      cat("\nNo significantly different category pairs after adjustment\n")
-#    }
-#  } else {
-#    cat("\nOverall p was not significant\n")
-#  }
-#  
-#  ### Summary of findings
-#  cat("\n=== SUMMARY ===\n")
-#  cat("Categories significantly enriched for", residue, "allele:\n")
-#  enriched_categories <- enrichment_results |> 
-#    filter(significant_binomial | significant_fisher_2x2)
-#  if(nrow(enriched_categories) > 0) {
-#    for(i in 1:nrow(enriched_categories)) {
-#      cat("  -", enriched_categories$category[i], 
-#          "(observed:", enriched_categories$observed_alleles[i], "/", enriched_categories$total_sequences[i],
-#          "=", round(enriched_categories$observed_prop[i] * 100, 1), "%; expected:", 
-#          round(enriched_categories$expected_alleles[i], 1), ")\n")
-#    }
-#  } else {
-#    cat("  None\n")
-#  }
-#  
-##  # Code recommended by Copilot: the pre- and post- adjustment pvals look like p_value_binomial and p_adj_binomial from the earlier binomial test,
-##  # so this code is redundant.
-##  # Total number of "yes" alleles
-##  total_yes <- sum(xtab["yes", ])
-##  # Total number of samples
-##  total_samples <- colSums(xtab)
-##  
-##  # Expected proportion of "A"
-##  expected_p <- total_yes / sum(total_samples)
-##  
-##  # Binomial tests per group
-##  pvals <- sapply(1:5, function(i) {
-##    binom.test(xtab["yes", i], total_samples[i], p = expected_p, alternative = "greater")$p.value
-##  })
-##  names(pvals) <- colnames(xtab)
-##  print(pvals)
-##  print(p.adjust(pvals, method = adjust)) 
-#
-#  
-#  # Return all results for potential further analysis
-#  invisible(list(
-#    contingency_table = xtab,
-#    enrichment_results = enrichment_results,
-#    overall_fisher_p = p,
-#    total_sequences = total_sequences,
-#    total_allele = total_allele,
-#    overall_proportion = overall_prop
-#  ))
-#}
 
 
 calibrate_coords <- function(seq, sites_of_interest) {

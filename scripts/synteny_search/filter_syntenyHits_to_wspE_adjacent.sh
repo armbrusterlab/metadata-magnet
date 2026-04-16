@@ -5,17 +5,20 @@
 summary=$1 # synteny summary file
 sign=$2 # "pos" or "neg"
 
-outname=$(dirname $summary)/synteny_summary_wspE_filtered.tsv # just save it to the same dir as the input file...
-echo "genome_id	contig	organism	isolation_source	titles	locus_tag	protein_id	sequence	seq_tech	isolation_site" > $outname
+outname="${summary%.*}_wspE_filtered.tsv" # just save it to the same dir as the input file...
+echo "genome_id	contig	organism	isolation_source	titles	locus_tag	protein_id	sequence	seq_tech	assembly_method	genome_coverage	isolation_site" > $outname
 
 log=$(dirname $summary)/wspE_filtering.log
 echo "match_count	genome_id	contig	wspF_locus_tag	wspF_locus_num	wspE_locus_num	strand" > $log
 
 # I think the hmmer outputs are identical regardless of sign, but just to be sure
+#synteny_outputs="/home/kcw2/metadata-magnet/nextflow/work/7d/cff95a6665b91271e3a92093fc08dc" # work dir from last successful Nextflow run
+# wait, we have to search in a directory for which we DID search for wspE, otherwise HMMer wouldn't have looked for wspE at all
+synteny_outputs="/home/kcw2/data/blast_outputs/wspF/synteny_search_outputs_updated" # the issue is that I've changed the set of genomes searched since then
 if [[ $sign = "pos" ]]; then
-  datadir="/home/kcw2/data/blast_outputs/wspF/synteny_search_outputs_updated/posForward/genomes"
+  datadir="${synteny_outputs}/posForward/genomes"
 else
-  datadir="/home/kcw2/data/blast_outputs/wspF/synteny_search_outputs_updated/negBackward/genomes"
+  datadir="${synteny_outputs}/negBackward/genomes"
 fi
 
 echo "Searching ${datadir} for wspE hits"
