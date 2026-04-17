@@ -16,7 +16,8 @@ As of the time of writing, the [NCBI datasets](https://www.ncbi.nlm.nih.gov/data
 A variety of utilities are provided: you may filter your homolog dataset in various ways, automatically categorize isolation source metadata into groups such as "host" or "natural environment", generate figures to visualize differences between categories, and run statistical tests on allele properties.
 
 ## Pipeline tutorial
-To run the pipeline, please refer to the tutorial linked [here](https://github.com/armbrusterlab/metadata-magnet/blob/main/pipeline_tutorial.md).
+To run the pipeline, please refer to the tutorial linked [here](https://github.com/armbrusterlab/metadata-magnet/blob/main/pipeline_tutorial.md).  
+Although this pipeline is designed to obtain homologs of your target bacterial protein sequence, there is a [workaround](https://github.com/armbrusterlab/metadata-magnet/blob/main/run_with_orthologs.md) if you are specifically interested in orthologs of your protein. This document doubles as a guide for running a few of the pipeline scripts as stand-alones.  
 
 ## Pipeline overview
 Stages of the pipeline:
