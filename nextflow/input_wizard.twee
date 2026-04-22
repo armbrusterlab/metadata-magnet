@@ -98,6 +98,7 @@ First run the pipeline with this inputs YAML file, and inspect the output BLAST 
 When you are ready to continue, rerun this wizard with the exact same set of arguments as defined previously, and then rerun the pipeline with the new inputs YAML file and the -resume flag to use cached outputs.
 
 
+<<set $outputString to setup.formatInput($outputString, "stopBeforeFiltering", "true") >>
 [[FINISH|printOutputs]]
 
 

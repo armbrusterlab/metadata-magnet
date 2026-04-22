@@ -86,13 +86,13 @@ You may use any alignment program, but for this example I will use MUSCLE/super5
 conda activate metadata-magnet-env # set up from YAML in metadata-magnet/nextflow/envs
 my_fasta="mucA_orthoDB_converted.fasta"
 
-seqCount=\$(grep '^>' ${my_fasta} | wc -l) # check for lines starting with >
-echo "There are \$seqCount sequences in the input FASTA."
+seqCount=$(grep '^>' ${my_fasta} | wc -l) # check for lines starting with >
+echo "There are $seqCount sequences in the input FASTA."
 
-if [ "\$seqCount" -le 1 ]; then # can't align fasta with 0 or 1 sequences
+if [ "$seqCount" -le 1 ]; then # can't align fasta with 0 or 1 sequences
     echo "Fewer than 2 sequences; not running MUSCLE."
     cp ${my_fasta} "${my_fasta%.*}_aligned.fasta"
-elif [ "\$seqCount" -le 1000 ]; then # <= 1000 seqs: use full MUSCLE algorithm, since the size is reasonably small
+elif [ "$seqCount" -le 1000 ]; then # <= 1000 seqs: use full MUSCLE algorithm, since the size is reasonably small
     muscle -align ${input_file} -output "${my_fasta%.*}_aligned.fasta"
 else # use super5 for larger datasets
     muscle -super5 ${input_file} -output "${my_fasta%.*}_aligned.fasta"
