@@ -25,7 +25,8 @@ Stages of the pipeline:
 2. In Nextflow: BLAST for potential homologs of your bacterial protein sequence of interest, filter the dataset, retrieve the corresponding metadata, and optionally align the sequences. The main outputs of this stage are a **FASTA** and tab-separated **metadata table** for the homolog dataset.
 3. Optionally, further filter the dataset by filtering the metadata. This step may be necessary if you have specific filtering requirements not accounted for by the pipeline. We provide some helper functions in filter_metadata.py, but usually, filtering can be done in the command line.
 4. In R Shiny GUI: Plug in the **FASTA** and **metadata table** to produce figures and run statistical tests.
-<img width="750" height="983" alt="image" src="https://github.com/user-attachments/assets/e0f6993d-b71e-4b17-8bbb-d53fcc2c9ecb" />
+<img width="2205" height="3461" alt="image" src="https://github.com/user-attachments/assets/f8a89180-6ac3-4f16-92ce-4dbb92baffa7" />
+
 
 ## GUI screenshots
 Data input tab:
