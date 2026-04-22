@@ -425,6 +425,6 @@ setup.trimInput = function(input) {
 
 
 setup.formatInput = function(currentOutput, varName, input) {
-  let outputString = currentOutput + varName + ": " + setup.trimInput(input) + "\n";
+  let outputString = currentOutput + varName + ": '" + setup.trimInput(input) + "'\n";
   return outputString
 }
