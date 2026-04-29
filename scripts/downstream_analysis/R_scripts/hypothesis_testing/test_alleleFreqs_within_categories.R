@@ -2,37 +2,43 @@ library(dplyr)
 library(tidyr)
 library(rstatix)
 
-test_alleleFreqs_within_categories <- function(df, site, residue, group_var = "category", seq_colname = "sequence", adjust = "fdr", forceChisq = FALSE) {
-  # df[[seq_colname]] is assumed to contain aligned sequences
-  # site is assumed to be a single int, pre-adjusted upon entry into the GUI
+test_alleleFreqs_within_categories <- function(
+    df, site, residue,
+    group_var = "category",
+    seq_colname = "sequence",
+    adjust = "fdr",
+    forceTest = "auto"   # "auto", "chisq", or "fisher"
+) {
+  # Validate forceTest
+  if (!forceTest %in% c("auto", "chisq", "fisher")) {
+    print(forceTest)
+    stop('forceTest must be "auto", "chisq", or "fisher"')
+  }
+  
   adj_site <- site
   
   df |>
     group_by(!!sym(group_var)) |>
-    summarize(count=n()) |>
+    summarize(count = n()) |>
     print()
-
-  ### make contingency table for pairwise Fisher's test
-  summary_df <- df |> 
-    mutate(allele = substr(df[[seq_colname]], adj_site, adj_site)) |> 
-    mutate(is_allele = (allele == residue)) |> 
-    group_by(!!sym(group_var), is_allele) |> 
-    summarize(n = n(), .groups = "drop") 
   
-  # Ensure all combinations of group_var and is_allele exist
-  summary_df <- summary_df |>
+  ### Build contingency table
+  summary_df <- df |>
+    mutate(allele = substr(df[[seq_colname]], adj_site, adj_site)) |>
+    mutate(is_allele = (allele == residue)) |>
+    group_by(!!sym(group_var), is_allele) |>
+    summarize(n = n(), .groups = "drop") |>
     complete(!!sym(group_var), is_allele = c(TRUE, FALSE), fill = list(n = 0))
-
-  # get group names in the same order as in summary_df
-  groups <- summary_df |> filter(is_allele == TRUE) |> pull(!!sym(group_var))
-  observed <- summary_df |> filter(is_allele == TRUE) |> pull(n)
-  not_observed <- summary_df |> filter(is_allele == FALSE) |> pull(n)
+  
+  groups <- summary_df |> filter(is_allele) |> pull(!!sym(group_var))
+  observed <- summary_df |> filter(is_allele) |> pull(n)
+  not_observed <- summary_df |> filter(!is_allele) |> pull(n)
   
   xtab <- as.table(rbind(observed, not_observed))
   dimnames(xtab) <- list(allele_observed = c("yes", "no"), group = groups)
   print(xtab)
   
-  ### Calculate overall statistics for enrichment tests
+  ### Overall stats
   total_sequences <- sum(xtab)
   total_allele <- sum(xtab["yes", ])
   overall_prop <- total_allele / total_sequences
@@ -40,9 +46,9 @@ test_alleleFreqs_within_categories <- function(df, site, residue, group_var = "c
   cat("\n=== OVERALL STATISTICS ===\n")
   cat("Total sequences:", total_sequences, "\n")
   cat("Total", residue, "alleles:", total_allele, "\n")
-  cat(glue("Overall proportion: {round(overall_prop, 4)} ( {round(overall_prop * 100, 1)}% )"), "\n")
+  cat(glue("Overall proportion: {round(overall_prop, 4)} ({round(overall_prop*100,1)}%)\n"))
   
-  cat("\n=== ENRICHMENT TESTS ===\n")
+  ### Enrichment tests
   enrichment_results <- data.frame(
     category = groups,
     total_sequences = colSums(xtab),
@@ -53,9 +59,30 @@ test_alleleFreqs_within_categories <- function(df, site, residue, group_var = "c
     test_used = NA
   )
   
-  # Perform tests for each category
-  for(i in 1:nrow(enrichment_results)) {    
-    # 2x2 contingency table for this category vs all others
+  choose_test <- function(cont_table, forceTest) {
+    expected <- suppressWarnings(chisq.test(cont_table, correct = FALSE)$expected)
+    
+    if (forceTest == "chisq") {
+      return(list(name = "Chi-square",
+                  p = chisq.test(cont_table, correct = TRUE)$p.value))
+    }
+    if (forceTest == "fisher") {
+      return(list(name = "Fisher's exact",
+                  p = fisher.test(cont_table, alternative = "greater")$p.value))
+    }
+    
+    # Automatic mode
+    if (all(expected >= 5)) {
+      list(name = "Chi-square",
+           p = chisq.test(cont_table, correct = TRUE)$p.value)
+    } else {
+      list(name = "Fisher's exact",
+           p = fisher.test(cont_table, alternative = "greater")$p.value)
+    }
+  }
+  
+  ### Per-category tests
+  for (i in 1:nrow(enrichment_results)) {
     category_A <- enrichment_results$observed_alleles[i]
     category_nonA <- enrichment_results$total_sequences[i] - category_A
     other_A <- total_allele - category_A
@@ -63,32 +90,38 @@ test_alleleFreqs_within_categories <- function(df, site, residue, group_var = "c
     
     cont_table <- matrix(c(category_A, category_nonA, other_A, other_nonA), nrow = 2)
     
-    # Check expected frequencies for chi-square test
-    expected <- chisq.test(cont_table, correct = FALSE)$expected
-    # print("Expected frequencies for chi-square test:")
-    # print(expected)
-    
-    # Choose test based on expected frequencies
-    if (all(expected >= 5) | forceChisq) {
-      # Use Pearson's chi-square test with continuity correction
-      test_result <- chisq.test(cont_table, correct = TRUE)
-      enrichment_results$test_used[i] <- "Chi-square"
-      enrichment_results$p_value[i] <- test_result$p.value
+    test <- choose_test(cont_table, forceTest)
+    enrichment_results$test_used[i] <- test$name
+    enrichment_results$p_value[i] <- test$p
+  }
+  
+  enrichment_results$p_adj <- p.adjust(enrichment_results$p_value, method = adjust)
+  enrichment_results$significant <- enrichment_results$p_adj < 0.05
+  enrichment_results$direction <- NA # for chi-square tests
+  
+  for (i in 1:nrow(enrichment_results)) {
+    if (enrichment_results$significant[i] &&
+        enrichment_results$test_used[i] == "Chi-square") {
+      
+      obs <- enrichment_results$observed_alleles[i]
+      exp <- enrichment_results$expected_alleles[i]
+      
+      if (obs > exp) {
+        enrichment_results$direction[i] <- "enriched"
+      } else if (obs < exp) {
+        enrichment_results$direction[i] <- "lacking"
+      } else {
+        enrichment_results$direction[i] <- "no difference"
+      }
+    } else if (enrichment_results$significant[i] &&
+            enrichment_results$test_used[i] == "Fisher") {
+        enrichment_results$direction[i] <- "enriched"
     } else {
-      # Fall back to Fisher's exact test
-      test_result <- fisher.test(cont_table, alternative = "greater")
-      enrichment_results$test_used[i] <- "Fisher's exact"
-      enrichment_results$p_value[i] <- test_result$p.value
+      enrichment_results$direction[i] <- "n/a"
     }
   }
   
-  # Adjust p-values for multiple testing
-  enrichment_results$p_adj <- p.adjust(enrichment_results$p_value, method = adjust)
   
-  # Add significance flags
-  enrichment_results$significant <- enrichment_results$p_adj < 0.05
-  
-  # Format and print results
   enrichment_results_formatted <- enrichment_results |>
     mutate(
       observed_prop = round(observed_prop, 4),
@@ -100,132 +133,123 @@ test_alleleFreqs_within_categories <- function(df, site, residue, group_var = "c
   row.names(enrichment_results_formatted) <- NULL
   print(enrichment_results_formatted)
   
-  # Determine which test to use for the overall test
-  # Check expected frequencies for the full contingency table
-  full_expected <- chisq.test(xtab, correct = FALSE)$expected
+  ### Overall association test
+  full_expected <- suppressWarnings(chisq.test(xtab, correct = FALSE)$expected)
   
   cat("\n=== OVERALL ASSOCIATION TEST ===\n")
-  if (all(full_expected >= 5) | forceChisq) {
-    # Use Pearson's chi-square test
-    cat("Using Pearson's Chi-square test\n")
-    cat("Expected frequencies:\n")
-    print(round(full_expected, 2))
-    
+  
+  overall_test <- choose_test(xtab, forceTest)
+  cat("Using", overall_test$name, "\n")
+  cat("Expected frequencies:\n")
+  print(round(full_expected, 2))
+  
+  if (overall_test$name == "Chi-square") {
     test <- chisq.test(xtab, correct = FALSE)
-    cat("\nChi-square test results:\n")
-    cat(glue("X-squared = {round(test$statistic, 3)}, df = {test$parameter}, p-value = {format.pval(test$p.value, digits = 3)}"))
     p <- test$p.value
+    cat(glue("\nChi-square: X²={round(test$statistic,3)}, df={test$parameter}, p={format.pval(p,3)}\n"))
     
-    # Also show standardized residuals for significant results
     if (p < 0.05) {
-      cat("\n\nStandardized residuals (|residual| > 2 indicate significant contribution):\n")
-      residuals <- test$stdres
-      print(round(residuals, 2))
+      cat("\nStandardized residuals:\n")
+      print(round(test$stdres, 2))
     }
   } else {
-    # Fall back to Fisher's exact test
-    cat("Using Fisher's exact test (some expected frequencies < 5)\n")
-    cat("Expected frequencies:\n")
-    print(round(full_expected, 2))
-    
     test <- fisher_test(xtab, detailed = TRUE)
-    cat("\nFisher's exact test results:\n")
     print(test)
     p <- test$p
   }
   
+  ### Pairwise comparisons
   if (p < 0.05) {
-    cat("\nOverall test is significant; conducting pairwise comparisons\n")
+    cat("\nOverall test significant; running pairwise comparisons\n")
     
-    # Pairwise tests - which specific pairs are different?
-    cat("\n=== PAIRWISE COMPARISONS ===\n")
-    cat(glue("Using {ifelse((all(full_expected >= 5) | forceChisq), 'chi-square', 'Fisher\\'s exact')} tests for pairwise comparisons\n"))
-    
-    # Get all pairwise combinations
-    n_groups <- length(groups)
     pairwise_results <- data.frame()
+    n_groups <- length(groups)
     
-    for(i in 1:(n_groups-1)) {
-      for(j in (i+1):n_groups) {
-        # Create 2x2 table for these two groups only
+    for (i in 1:(n_groups - 1)) {
+      for (j in (i + 1):n_groups) {
         pair_table <- xtab[, c(i, j)]
-        
-        # Check expected frequencies for this pair
-        pair_expected <- chisq.test(pair_table, correct = FALSE)$expected
-        
-        # Choose test based on expected frequencies
-        if (all(pair_expected >= 5) | forceChisq) {
-          test_result <- chisq.test(pair_table, correct = TRUE)
-          test_name <- "Chi-square"
-          p_val <- test_result$p.value
-        } else {
-          test_result <- fisher.test(pair_table, alternative = "two.sided")
-          test_name <- "Fisher's exact"
-          p_val <- test_result$p.value
-        }
+        test <- choose_test(pair_table, forceTest)
         
         pairwise_results <- rbind(pairwise_results, data.frame(
           group1 = groups[i],
           group2 = groups[j],
-          p = p_val,
-          test_used = test_name,
-          stringsAsFactors = FALSE
+          p = test$p,
+          test_used = test$name
         ))
       }
     }
     
-    # Adjust p-values for multiple comparisons
     pairwise_results$p_adj <- p.adjust(pairwise_results$p, method = adjust)
     pairwise_results$significant <- pairwise_results$p_adj < 0.05
     
-    # Print pairwise results
     print(pairwise_results)
     
-    # Identify significantly different pairs
     sig_pairs <- pairwise_results |> filter(significant)
-    if(nrow(sig_pairs) > 0) {
-      cat("\nSignificantly different category pairs (adjusted p < 0.05):\n")
+    if (nrow(sig_pairs) > 0) {
+      cat("\nSignificant pairs:\n")
       print(sig_pairs)
     } else {
-      cat("\nNo significantly different category pairs after adjustment\n")
+      cat("\nNo significant pairs after adjustment\n")
     }
   } else {
-    cat("\nOverall test was not significant\n")
+    cat("\nOverall test not significant\n")
   }
   
-  ### Summary of findings
+  ### Summary
   cat("\n=== SUMMARY ===\n")
-  cat(glue("Categories significantly enriched for {residue} allele (using {ifelse((all(full_expected >= 5) | forceChisq), 'Chi-square', 'Fisher\\'s exact')} enrichment tests):\n"))
-  enriched_categories <- enrichment_results |> 
-    filter(significant)
-  if(nrow(enriched_categories) > 0) {
-    for(i in 1:nrow(enriched_categories)) {
-      cat("  -", enriched_categories$category[i], 
-          "(observed:", enriched_categories$observed_alleles[i], "/", enriched_categories$total_sequences[i],
-          "=", round(enriched_categories$observed_prop[i] * 100, 1), "%; expected:", 
-          round(enriched_categories$expected_alleles[i], 1), 
-          ", test:", enriched_categories$test_used[i],
-          ", p-value adjusted by", adjust, "is (p =", formatC(enriched_categories$p_adj[i], format = "e", digits = 2), ") )\n")
-          
-      # additional print statements to facilitate data entry
-      cat(glue("{enriched_categories$category[i]} (p = {formatC(enriched_categories$p_adj[i], format = 'e', digits = 2)}; {round(enriched_categories$observed_prop[i] * 100, 1)}%)"), "\n") 
-      cat(glue("expected {round(overall_prop * 100, 1)}%"), "\n\n")
-    }
-  } else {
+  # cat(glue("Groups significantly enriched or lacking in {residue} allele:\n\n"))
+  cat(glue("Groups significantly enriched in {residue} allele:\n\n"))
+  
+  enriched_categories <- enrichment_results |> filter(significant)
+  
+  # # could report on categories lacking the allele for chi-square test, but won't because Fisher test is one-sided as intended
+  # if (nrow(enriched_categories) == 0) {
+  #   cat("  None\n")
+  # } else {
+  #   for (i in 1:nrow(enriched_categories)) {
+  #     dir <- enriched_categories$direction[i]
+  #     
+  #     cat("  -", enriched_categories$category[i],
+  #         "(", dir, "; observed:", enriched_categories$observed_alleles[i], "/",
+  #         enriched_categories$total_sequences[i], "=",
+  #         round(enriched_categories$observed_prop[i] * 100, 1), "%; expected:",
+  #         round(enriched_categories$expected_alleles[i], 1),
+  #         ", test:", enriched_categories$test_used[i],
+  #         ", p_adj =", formatC(enriched_categories$p_adj[i], format = "e", digits = 2),
+  #         ")\n")
+  #   }
+  # }
+  
+  if (nrow(enriched_categories) == 0) {
     cat("  None\n")
+  } else {
+    for (i in 1:nrow(enriched_categories)) {
+      dir <- enriched_categories$direction[i]
+      
+      if (dir == "enriched") {
+        cat("  -", enriched_categories$category[i],
+            "(observed:", enriched_categories$observed_alleles[i], "/",
+            enriched_categories$total_sequences[i], "=",
+            round(enriched_categories$observed_prop[i] * 100, 1), "%; expected:",
+            round(enriched_categories$expected_alleles[i], 1),
+            ", test:", enriched_categories$test_used[i],
+            ", p_adj =", formatC(enriched_categories$p_adj[i], format = "e", digits = 2),
+            ")\n")
+      }
+    }
   }
   
-  # Return all results for potential further analysis
   invisible(list(
     contingency_table = xtab,
     enrichment_results = enrichment_results,
     overall_p_value = p,
-    overall_test_used = ifelse((all(full_expected >= 5) | forceChisq), "Chi-square", "Fisher's exact"),
+    overall_test_used = overall_test$name,
     total_sequences = total_sequences,
     total_allele = total_allele,
     overall_proportion = overall_prop
   ))
 }
+
 
 
 calibrate_coords <- function(seq, sites_of_interest) {

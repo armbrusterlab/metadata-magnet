@@ -75,6 +75,16 @@ seqlen_hist <- function(df, outdir) {
     labs(y="Count", x="Sequence length (# amino acids)", title=glue("Sequence length frequencies (n={nrow(df)} BLAST hits)"))
   
   ggsave(fname)
+  
+  fname2 <- file.path(outdir, "seqlen_hist_gapsRemoved.pdf")
+  
+  df |> 
+    mutate(sequence_length = nchar(gsub("-", "", sequence))) |> 
+    ggplot() +
+    geom_histogram(aes(x=sequence_length)) +
+    labs(y="Count", x="Sequence length (# amino acids)", title=glue("Sequence length frequencies, gaps removed (n={nrow(df)} BLAST hits)"))
+  
+  ggsave(fname2)
 }
 
 # Histogram: Distribution of evalues

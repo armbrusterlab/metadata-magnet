@@ -203,12 +203,22 @@ ui <- navbarPage("Pipeline GUI",
                       choices = c("category", "subcategory", "genus", "species"),
                       selected = "category"),
           uiOutput("allele_residue_ui"),  # Dynamic residue selection
+          fluidRow(
+            column(6, 
+              actionButton("add_allele_column_btn", "Add Boolean column to current df for selected allele", 
+                          style = "width: 100%; margin-top: 10px;")
+            ),
+            column(6,
+              # Optional: Add a status message area
+              verbatimTextOutput("allele_column_status", placeholder = TRUE)
+            )
+          ),
           selectInput("adjust_method", "Adjustment method:",
                       choices = c("", "holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
                       selected = "fdr"),
-          radioButtons("forceChisqString", "Force Pearson's chi-square test over Fisher's Exact Test?",
-                       choices = c("Yes", "No"),
-                       selected = "No",
+          radioButtons("forceTest", "Test type (adjust if you get an error)",
+                       choices = c("Auto", "Fisher's Exact", "Chi-Square"),
+                       selected = "Auto",
                        inline = TRUE),
         ),
         
@@ -400,6 +410,122 @@ server <- function(input, output, session) {
     updateCheckboxGroupInput(session, "subset_levels",
                             selected = character(0))
   })
+
+  # Observer for adding Boolean column for selected allele
+  observeEvent(input$add_allele_column_btn, {
+    req(df_store(), input$allele_site, input$allele_seq_colname, ref_seqID_store())
+    req(input$allele_residue)
+    
+    # Get the current dataframe (full or subsetted)
+    current_df <- get_current_df()
+
+    # source script for calibrate_coords
+    source(file.path(script_dir, "hypothesis_testing", "test_alleleFreqs_within_categories.R"))
+    
+    if (is.null(current_df)) {
+      append_log("Error: No data available to add column")
+      show_allele_status("Error: No data available", "error")
+      return()
+    }
+    
+    # Use FULL dataframe for coordinate calibration to ensure reference sequence is available
+    full_df <- df_store()
+    
+    # Calculate adjusted site using full dataframe
+    matching_rows <- which(full_df$sequence_id == ref_seqID_store())
+    if (length(matching_rows) == 0) {
+      msg <- glue("Error: Reference sequence '{ref_seqID_store()}' not found in dataset")
+      append_log(msg)
+      show_allele_status(msg, "error")
+      return()
+    }
+    
+    reference_seq <- full_df[[input$allele_seq_colname]][matching_rows[1]]
+    sites_adj <- calibrate_coords(reference_seq, input$allele_site)
+    
+    if (length(sites_adj) == 0) {
+      msg <- glue("Error: Site {input$allele_site} not found in reference sequence (may be in gapped region)")
+      append_log(msg)
+      show_allele_status(msg, "error")
+      return()
+    }
+    
+    adj_site <- sites_adj[1]
+    
+    # Extract characters at the adjusted site from the current dataframe
+    chars_at_site <- substr(current_df[[input$allele_seq_colname]], adj_site, adj_site)
+    chars_at_site <- chars_at_site[!is.na(chars_at_site) & chars_at_site != ""]
+    
+    if (length(chars_at_site) == 0) {
+      msg <- glue("Error: No valid characters found at adjusted site {adj_site} in current data")
+      append_log(msg)
+      show_allele_status(msg, "error")
+      return()
+    }
+    
+    # Create the new column name
+    column_name <- glue("has_allele_{input$allele_residue}{input$allele_site}")
+    
+    # Check if column already exists
+    if (column_name %in% names(current_df)) {
+      msg <- glue("Warning: Column '{column_name}' already exists. Overwriting...")
+      append_log(msg)
+      show_allele_status(msg, "warning")
+    }
+    
+    # Create the Boolean column
+    boolean_values <- chars_at_site == input$allele_residue
+    
+    # Add the column to the dataframe
+    current_df[[column_name]] <- boolean_values
+    
+    # Update the stored dataframe (maintain subset if it exists)
+    if (!is.null(selected_df_store())) {
+      # If we have a subset, update it
+      selected_df_store(current_df)
+      append_log(glue("Added Boolean column '{column_name}' to subsetted data ({nrow(current_df)} rows)"))
+    } else {
+      # Update the full dataframe
+      df_store(current_df)
+      append_log(glue("Added Boolean column '{column_name}' to full dataset ({nrow(current_df)} rows)"))
+    }
+    
+    # Calculate and log statistics
+    true_count <- sum(boolean_values, na.rm = TRUE)
+    false_count <- sum(!boolean_values, na.rm = TRUE)
+    true_percent <- round(100 * true_count / length(boolean_values), 2)
+    
+    msg <- glue("Column '{column_name}' added successfully: {true_count} TRUE ({true_percent}%), {false_count} FALSE")
+    append_log(msg)
+    show_allele_status(msg, "success")
+  })
+
+  # Helper function to show status messages for the allele column addition
+  show_allele_status <- function(message, type = "info") {
+    # Format the message based on type
+    color <- switch(type,
+                    "error" = "red",
+                    "warning" = "orange",
+                    "success" = "green",
+                    "blue")
+    
+    status_text <- glue("<span style='color: {color};'>{message}</span>")
+    
+    # Update the status output
+    output$allele_column_status <- renderText({
+      status_text
+    })
+    
+    # Clear the status after 5 seconds for non-error messages
+    if (type != "error") {
+      invalidateLater(5000, session)
+      observe({
+        output$allele_column_status <- renderText({
+          ""
+        })
+      })
+    }
+  }
   
   # NEW: Output to check if reference sequence ID is available
   output$ref_seqID_available <- reactive({
@@ -956,7 +1082,9 @@ server <- function(input, output, session) {
           residue = input$allele_residue,
           group_var = input$allele_group_var,
           seq_colname = input$allele_seq_colname,
-          forceChisq = (input$forceChisqString == "Yes")
+          forceTest = ifelse(input$forceTest == "Fisher's Exact", "fisher",
+                             ifelse(input$forceTest == "Chi-Square", "chisq",
+                                    "auto"))
         )
         # Only add adjust parameter if it's not empty
         if (!is.null(input$adjust_method) && input$adjust_method != "") {
