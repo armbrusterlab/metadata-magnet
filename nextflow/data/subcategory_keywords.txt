@@ -1,5 +1,6 @@
 respiratory
 sputum
+(body)_sputum
 respiratory
 cystic fibrosis
 trachea
@@ -17,6 +18,7 @@ nasopharynx
 bronchoalveolar
 nose
 pleural
+pleura
 broncho
 alveolar
 sputamentum
@@ -26,31 +28,20 @@ sinus
 phlegm
 gill
 hydrothorax
+pulmonary
+copd
+urt
+bronch
+cf
+nasopharyngeal
+tonsil
+cheek
+saliva
+spit
+expectorate
+fasciotomy
 ***
-eye
-cornea
-eye
-ocular
-conjunctiva
-vitreous
-***
-excretory
-urine
-urinary
-uti
-feces
-stool
-kidney
-fecal
-dung
-rectal
-semen
-faecal
-caecal
-cloaca
-livestock waste
-liver
-***
+gastrointestinal
 digestive
 stomach
 abdominal
@@ -60,47 +51,137 @@ intestine
 gastrointestinal
 intestinal
 bile
-digestive
-***
-groin
-genital
-groin
-pubic
-vulva
+hepatopancreas
+liver
+pancreas
+feces
+stool
+fecal
+faecal
+caecal
+dung
+livestock waste
 cloaca
-clitoris
+rectal
 perirectal
 peri-rectal
-rectal
+rectum
+diarrhea
+manure
+envo_2100002
+jejunum
+eviscerated content
+gastr
+ileum
 ***
+urogenital
+urogenital
+urine
+urinary
+uti
+kidney
+genital
+pubic
+vulva
+clitoris
+semen
+groin
+vagina
+endoscraping
+envo:00002047
+urethra
+prostate
+inguinal
+penis
+scrotal
+coccyx
+sperm
+urology
+yolk
+***
+sterile sites
 bloodstream
 blood
-pus
-cvc
 plasma
+cerebrospinal fluid
+csf
+lumbar puncture
+peritoneal fluid
+seroperitoneum
+ascite
+ascitic
+joint fluid
+intraabdominal fluid
+paravertebral fluid
+urosepsis
+pus
+bacteremia
+bacteraemia
+***
+eye
+cornea
+eye
+ocular
+conjunctiva
+vitreous
+keratitis
+ac tap
+***
+ear
+ear
+auricular
+auricle
+pinna
+auditory
+ear canal
+external auditory canal
+tympanic
+eardrum
+otitis
+otorrhea
+otorrhoea
+tympanocentesis
+myringotomy
+mastoid
+mastoiditis
+ossicles
+eustachian tube
 ***
 other body part
-ear
 foot
 skin
 nail
 bone
 toe
-vitreous
 breast
 chest
-conjunctival
 uterus
 spleen
-ascite
-cheek
-hepatopancreas
 sacrum
 spine
-peritoneal fluid
-seroperitoneum
 thigh
-csf
+shin
+leg
+mandible
+abdomen
+brain
+buttocks
+joint
+oral
+calf
+tibia
+fasciotomy
+flank
+feet
+gall bladder
+pancreas
+heart
+heel
+knee
+cellulitis
+neck
+pancreatic
+ankle
 ***
 soil
 soil
@@ -114,85 +195,23 @@ topsoil
 envo:00002160
 mud
 envo:00005774
+envo_01000747
+envo_00002259
+envo:00001998
+silt
+loam
+envo:00002170
 ***
-plant
-leaf
-leaves
-plant
-root
-willow
-barley
-flower
-vegetative
-twig
-leaves
-seed
-tomato
-beet
-tree
-pinus pinaster
-crop
-rice
-bark
-banana
-crown gall
-grape
-sugarcane
-reed
-pepper
-onion
-tree
-tuber
-fruit
-phyllosphere
-potato
-grain
-graft union
-forest
-weed
-carrot
-cucumber
-cherry
-clover
-potato
-soy
-shoot
-oryza sativa
-kiwi
-solanum tuberosum
-malus sylvestris
-pikea pinnata
-watermelon
-hazelnut
-mangrove
-vegetable
-apple
-dendrobium officinale
-stem
-po_0009002
-po:0009002
-nuts
-rhododendron pulchrum
-artemisia fukudo
-rubus
-sphagnum fuscum
-phlox subulata
-cucurbita maxima
-coriander
-basil
-wheat
-spinach
-zucchini
-romaine
-eggplant
-endosphere
-xylem
-olive
-***
-water
+aquatic
 river
 lake
 water
+waterfall
+glacier
+hydrothermal
+water column
+water spring
+mariculture
 snow
 pond
 intertidal
@@ -215,7 +234,6 @@ faucet
 cenote water
 pool
 formation water
-sink tap
 puddle
 washing machine
 sulfide spring
@@ -232,52 +250,62 @@ lagoon
 estuary
 estuarine
 aquatic
+cryoconite
+rain
+surfacewater
+envo:01000990
+washbasin
+sink tap
+mariana trench
+subsurface
+bioscrubber
+irrigation canal
+envo:00003096
+basin pipe
+cold seep
+envo:00002001
+envo:00002007
+envo:00003096
+humidifier
+tap water
 ***
-waste
+sewage
 wastewater
 waste water
 sludge
 sewage
-contaminated
 toilet
 tailing
 effluent
 sewer
+envo:00002018
+industrial waste
 ***
-biofilm
-aggregate
-biofilm
-microbial mat
-epilithon
-bacterial mat
-mat/biofilm
-envo:00002034
-***
-medical
+healthcare
 hospital
 dental
 catheter
 shunt
 clinical
 surgical
-tracheostomy
 health system
-***
-processed food
-kefir
-cheese
-tofu
-coffee
-salad
-burger
-food
-kimchi
-pickling sauce
-fermentation starter
-feed
-noodles
-sausage
-foodon_03315173
-poultry
-pork
-beef
+cvc
+nasogastric tube
+stent
+intensive care unit
+icu
+suture
+ward
+nephrostomy tube
+ventilator condensate
+extravasate
+medical
+endoscope
+venipuncture
+nasogastric tube
+health care
+urostomy bag
+dialysis bag
+bedpan
+nasojejunal tube
+nasopharyngeal tube

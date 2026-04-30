@@ -1,4 +1,4 @@
-host
+clinical
 infection
 sputum
 respiratory
@@ -12,9 +12,27 @@ uti
 blood
 ocular
 abdominal
+abdomen
 abscess
 conjunctiva
 ear
+auricular
+auricle
+pinna
+auditory
+ear canal
+external auditory canal
+tympanic
+eardrum
+otitis
+otorrhea
+otorrhoea
+tympanocentesis
+myringotomy
+mastoid
+mastoiditis
+ossicles
+eustachian tube
 foot
 genital
 g-tube
@@ -43,7 +61,7 @@ cloaca
 gut
 intestine
 ulcer
-clinical
+stomach
 stool
 pus
 bronchial
@@ -67,9 +85,9 @@ spine
 sore
 milk
 bile
-peritoneal fluid
 kidney
 seroperitoneum
+peritoneum
 shunt
 nose
 thigh
@@ -77,6 +95,7 @@ aspirate
 pleural
 secretion
 uterus
+uterine
 broncho
 alveolar
 sputamentum
@@ -94,12 +113,15 @@ sinus
 blister
 oyster
 peri-rectal
+rectum
 dung
 spleen
 ascite
+ascitic
 mealworm
 chicken
 fungus
+mushroom
 fungal
 hypha
 crayfish
@@ -107,7 +129,6 @@ shrimp
 coral
 alga
 sargassum
-epilithon
 lichen
 rectal
 envo:00000150
@@ -135,6 +156,7 @@ yellow croaker
 tilapia
 hydrothorax
 faecal
+faeces
 caecal
 csf
 aiptasia
@@ -148,12 +170,123 @@ salmon
 sardine
 sepioteuthis lessoniana
 dinoflagellate
+body fluid
+cerebrospinal
+ureter
+vagina
+manure
+decubitus
+lumbar puncture
+envo_2100002
+nephrostomy tube
+effusion
+pulmonary
+arthropod
+dog
+copd
+mosquito
+extravasate
+keratitis
+urt
+joint fluid
+tautogolabrus adspersus
+bronch
+intraabdominal
+stegodyphus dumicola
+animal
+oral
+alevin
+infant
+cf
+endoscope
+ac tap
+venipuncture
+canine
+worm
+nasogastric tube
+homo sapiens
+clinical
+cow
+paravertebral fluid
+pleura
+sporocarp
+jejunum
+saliva
+internal organs
+brain
+flies
+necropsy
+cattle
+monkey
+sanies
+urostomy
+mandible
+nasopharyngeal
+spit
+buccal
+endoscraping
+eviscerated content
+crocodile
+urosepsis
+bacteremia
+bacteraemia
+ulcus cruris
+sculpin
+equine
+urogenital
+dolphin
+biliary
+bleeding canker
+body
+blowhole
+burn
+buttocks
+gingiva
+tonsil
+calf
+tibia
+envo:00002047
+expectorate
+flank
+feet
+(body)_sputum
+fester
+peritoneal
+urethra
+gall bladder
+gastr
+pancreas
+prostate
+heart
+heel
+ileum
+knee
+inguinal
+cellulitis
+leg
+nasojejunal
+nasopharyngeal
+neck
+pancreatic
+penis
+ankle
+scrotal
+coccyx
+sepsis
+sperm
+urea
+urology
+vascular
+wing
+yolk
 ***
 plant
 leaf
 leaves
 rhizosphere
 rhizoplane
+rhizome
+ectomycorrhizosphere
 plant
 root
 willow
@@ -187,7 +320,6 @@ cucumber
 cherry
 clover
 lotus
-potato
 soy
 shoot
 oryza sativa
@@ -222,6 +354,55 @@ endosphere
 xylem
 olive
 endophyte
+graft union
+forest
+envo_00000115
+citrus
+lignin
+apoplast
+nectar
+maple sap
+envo_01000999
+echinocactus platyacanthus
+lettuce
+lemon
+bamboo
+berry
+berries
+nagaimo
+cannabis
+cantaloupe
+herb
+honeydew
+apricot
+wood
+parenchyma
+primula officinalis
+origanum marjoram
+pear
+vine
+peach
+broccoli
+miscanthus giganteus
+strawberry
+sainfoin
+teosinte
+cranberry
+po:0006001
+hibiscus
+chili
+peanut
+alfalfa
+agave salmiana
+tobacco
+bean
+pisum sativum
+taxus cuspidata
+maize
+buds
+lily
+mango
+sesame
 ***
 natural environment
 soil
@@ -235,7 +416,7 @@ snow
 waterfall
 glacier
 field
-hydrothermal vent
+hydrothermal
 agriculture
 agricultural
 pond
@@ -257,15 +438,14 @@ stream
 cenote water
 water column
 water spring
+spring water
 formation water
 oilfield
 natural mineral water
 sulfide spring
 fjord
-graft union
-envo_00000115
-forest
 freshwater
+fresh water
 envo:00002011
 envo:00000227
 dhab water
@@ -286,6 +466,26 @@ ground water
 lagoon
 coastal water
 envo:00002149
+cryoconite
+terrestrial
+rain
+precipitation
+ice
+envo_01000747
+envo_00002259
+surfacewater
+meadow
+mariana trench
+subsurface
+envo:00001998
+silt
+loam
+brook
+brackish water
+cold seep
+envo:00002007
+envo:00002170
+prairie
 ***
 built environment
 wastewater
@@ -294,7 +494,6 @@ coin
 sewage
 hospital
 urban
-waterline
 drinking water
 shower
 drain
@@ -303,7 +502,6 @@ sump pump
 waste water
 hose
 fountain
-drain
 faucet
 pool
 glass-crusher
@@ -331,6 +529,34 @@ hopper
 greenhouse
 factory
 sewer
+intensive care unit
+icu
+envo:01000990
+envo:01000486
+international space station
+indoor
+ward
+retail store
+ventilator condensate
+water from pipe
+trough
+medical center
+washbasin
+air filter
+bioscrubber
+paper mill
+irrigation canal
+floor
+mechanical ventilation system
+envo:01000584
+envo:00003096
+basin pipe
+community water network
+envo:00002001
+envo:00002018
+envo:00003096
+humidifier
+tap water
 ***
 culture
 culture
@@ -345,3 +571,50 @@ microcosm
 laboratory stock
 experimentally evolved
 experimental evolution
+transposon
+mock community
+lab evolved
+r2a
+chemostat
+plate
+***
+biofilm
+aggregate
+biofilm
+microbial mat
+epilithon
+bacterial mat
+mat/biofilm
+envo:00002034
+cyanobacterial mat
+microbial red mat
+***
+food
+kefir
+cheese
+tofu
+coffee
+salad
+burger
+food
+kimchi
+pickling sauce
+fermentation starter
+feed
+noodles
+sausage
+foodon_03315173
+poultry
+pork
+beef
+dairy
+meat
+oats
+liquor
+lamb
+mozzarella
+queso fresco
+cream
+curd
+honey
+imported fresh produce
