@@ -309,3 +309,4 @@ dialysis bag
 bedpan
 nasojejunal tube
 nasopharyngeal tube
+device

@@ -203,6 +203,9 @@ ui <- navbarPage("Pipeline GUI",
                       choices = c("category", "subcategory", "genus", "species"),
                       selected = "category"),
           uiOutput("allele_residue_ui"),  # Dynamic residue selection
+          selectInput("adjust_method", "Adjustment method:",
+            choices = c("", "holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
+            selected = "fdr"),
           fluidRow(
             column(6, 
               actionButton("add_allele_column_btn", "Add Boolean column to current df for selected allele", 
@@ -212,14 +215,11 @@ ui <- navbarPage("Pipeline GUI",
               # Optional: Add a status message area
               verbatimTextOutput("allele_column_status", placeholder = TRUE)
             )
-          ),
-          selectInput("adjust_method", "Adjustment method:",
-                      choices = c("", "holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
-                      selected = "fdr"),
-          radioButtons("forceTest", "Test type (adjust if you get an error)",
-                       choices = c("Auto", "Fisher's Exact", "Chi-Square"),
-                       selected = "Auto",
-                       inline = TRUE),
+          )
+          # radioButtons("forceTest", "Test type (adjust if you get an error)",
+          #              choices = c("Auto", "Fisher's Exact", "Chi-Square"),
+          #              selected = "Auto",
+          #              inline = TRUE),
         ),
         
         # Inputs for other scripts can be added similarly
@@ -1081,10 +1081,10 @@ server <- function(input, output, session) {
           site = adj_site,  # Pass the pre-adjusted site
           residue = input$allele_residue,
           group_var = input$allele_group_var,
-          seq_colname = input$allele_seq_colname,
-          forceTest = ifelse(input$forceTest == "Fisher's Exact", "fisher",
-                             ifelse(input$forceTest == "Chi-Square", "chisq",
-                                    "auto"))
+          seq_colname = input$allele_seq_colname #,
+          # forceTest = ifelse(input$forceTest == "Fisher's Exact", "fisher",
+          #                    ifelse(input$forceTest == "Chi-Square", "chisq",
+          #                           "auto"))
         )
         # Only add adjust parameter if it's not empty
         if (!is.null(input$adjust_method) && input$adjust_method != "") {
