@@ -3,7 +3,7 @@ library(glue)
 theme_set(theme_classic())
 
 # Function to save violin plots based on grouping variable
-save_violin_plots <- function(df, group_var = "category", outdir, pdf_suffix, column_name = "sequence_length", reference_label=NA, reference_length=NA, additional = "boxplot") {
+save_violin_plots <- function(df, group_var = "category", outdir, pdf_suffix, column_name = "sequence_length", reference_label=NA, reference_length=NA, additional = "boxplot", width = NA, height = NA) {
   if (!group_var %in% names(df)) stop(glue("Column '{group_var}' not found in df"))
   if (!column_name %in% names(df)) stop(glue("Column '{column_name}' not found in df"))
   
@@ -17,7 +17,7 @@ save_violin_plots <- function(df, group_var = "category", outdir, pdf_suffix, co
       
   # save the base plot, and add to it depending on options
   plots <- df |> ggplot() +
-    geom_violin(aes(x=!!sym(group_var), y=!!sym(column_name))) +
+    geom_violin(aes(x=!!sym(group_var), y=!!sym(column_name)), drop = FALSE) +
     geom_text(data = category_counts, 
               aes(x=!!sym(group_var), y = max(df[[column_name]]) + 0.5, label = paste0("n = ", n)), 
               inherit.aes = FALSE, vjust = 0)  
@@ -26,7 +26,7 @@ save_violin_plots <- function(df, group_var = "category", outdir, pdf_suffix, co
   if (!is.na(reference_label) & !is.na(reference_length)) {
     # add the reference as a horizontal line
     plots <- plots + 
-      geom_hline(aes(yintercept = reference_length), colour = 'blue') +
+      geom_hline(aes(yintercept = reference_length), colour = 'blue', linetype = 'dashed') +
       labs(title = glue("{reference_label} {column_name} = {reference_length}"))
     
 #    plots <- plots + 
@@ -41,15 +41,35 @@ save_violin_plots <- function(df, group_var = "category", outdir, pdf_suffix, co
     plots <- plots + 
       geom_boxplot(aes(x=!!sym(group_var), y=!!sym(column_name)), width=0.1, color = "red")
   } else if (additional == "mean") {
-    plots <- plots + stat_summary(fun.data=mean_sdl, geom="pointrange", color="red")
+    valid_for_summary <- df |>
+      group_by(!!sym(group_var)) |>
+      filter(n() >= 2)
+
+    plots <- plots +
+      stat_summary(
+        data = valid_for_summary,
+        aes(x = !!sym(group_var), y = !!sym(column_name)),
+        fun.data = mean_sdl,
+        geom = "pointrange",
+        color = "red"
+      )
   }
   # if the additional argument doesn't match either, ignore it
   
-  ggsave(fname, plot = plots, create.dir=TRUE)
+  ggsave(
+    fname, 
+    plot = plots, 
+    create.dir=TRUE,
+    width = width,
+    height = height,
+    units = "in",
+    dpi = 300,
+    limitsize = FALSE
+    )
   print(glue("Violin plots saved to {fname}"))
 }
 
-violin_plots_by_source <- function(df, outdir, column_name = "sequence_length", reference_label=NA, group_var = "category", additional = "boxplot") {
+violin_plots_by_source <- function(df, outdir, column_name = "sequence_length", reference_label=NA, group_var = "category", additional = "boxplot", width = NA, height = NA) {
   make_dir(outdir)
   
   reference_length = NA # default value
@@ -89,7 +109,7 @@ violin_plots_by_source <- function(df, outdir, column_name = "sequence_length", 
 
   # Generate violin plot for group_var
   save_violin_plots(df, group_var, outdir, glue("{group_var}_violinPlots_{column_name}"), 
-                  column_name = column_name, reference_label=reference_label, reference_length=reference_length, additional)
+                  column_name = column_name, reference_label=reference_label, reference_length=reference_length, additional, width, height)
   
   
   # If group_var is "category" or "genus", can further split the data (by "subcategory" or "species" respectively)
@@ -102,7 +122,7 @@ violin_plots_by_source <- function(df, outdir, column_name = "sequence_length", 
     walk(names(df_categories), ~ save_violin_plots(df_categories[[.x]], "subcategory", 
                                                 outdir, glue("subcategories/{.x}_violinPlots_{column_name}"), 
                                                 column_name = column_name, reference_label=reference_label, 
-                                                reference_length=reference_length, additional))
+                                                reference_length=reference_length, additional, width, height))
   } else if (group_var == "genus") { # make additional plots for species
     df <- df[!is.na(df$genus), ] # remove rows with NA's for group_var so that the split will work properly
     df_categories <- split(df, df$genus)
@@ -112,7 +132,7 @@ violin_plots_by_source <- function(df, outdir, column_name = "sequence_length", 
     walk(names(df_categories), ~ save_violin_plots(df_categories[[.x]], "species", 
                                                 outdir, glue("species/{.x}_violinPlots_{column_name}"), 
                                                 column_name = column_name, reference_label=reference_label, 
-                                                reference_length=reference_length, additional))
+                                                reference_length=reference_length, additional, width, height))
   }
 }
 

@@ -41,8 +41,9 @@ The main Nextflow script for this pipeline is main.nf.
 If you would simply like to confirm that the pipeline works, you may run the following code and compare the outputs against those in the metadata-magnet/nextflow/test_results dir.
 ```bash
 cd metadata-magnet/nextflow
-nextflow run main.nf -params-file test-params.yaml -output-dir my_test_results -with-report my_test_results/report.html
+nextflow run main.nf -params-file example_data/input.yaml -output-dir my_test_results -with-report my_test_results/report.html
 ```
+You can compare the outputs against those in the example_results dir.
 
 ## Example run: setup, Nextflow, R Shiny GUI
 ### Prepare BLAST database of bacterial proteins
@@ -234,10 +235,12 @@ If running on a Unix/Linux server, take the following steps to view the GUI:
    conda activate metadata-magnet-env
    Rscript metadata-magnet/scripts/downstream_analysis/R_scripts/pipeline_gui.R
    ```
-3. Replace \<server-ip\> with your IP address, and open the link in a web browser.
+3. Replace \<server-ip\> with your IP address, and open the link in a web browser. The GUI webpage will be ready when the terminal reads "Listening on http://0.0.0.0:3838". 
    ```text
    http://<server-ip>:3838
    ```  
+ 
+When you are done with the GUI, press Ctrl + C in the terminal to disconnect from the server. Otherwise, the next time you run the GUI, you may get an error saying that the server is already in use. If you get that error, you will need to go into htop and kill the running instance of the GUI script.
 
 #### Load data
 <img width="582" height="709" alt="image" src="https://github.com/user-attachments/assets/d745cf29-eb65-475f-9d61-0163e42a5d8c" />  

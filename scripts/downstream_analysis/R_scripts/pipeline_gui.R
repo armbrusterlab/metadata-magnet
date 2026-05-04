@@ -118,6 +118,8 @@ ui <- navbarPage("Pipeline GUI",
           selectInput("additional", "Overlay:",
                       choices = c("boxplot", "mean", "none"),
                       selected = "boxplot"),
+          numericInput("violin_width", "Width (inches):", value = 8, min = 1, max = 40, step = 0.5),
+          numericInput("violin_height", "Height (inches):", value = 6, min = 1, max = 40, step = 0.5)
         ),
         
         # inputs for make_pie_charts.R
@@ -128,8 +130,8 @@ ui <- navbarPage("Pipeline GUI",
                          selectInput("group_var2", "Categorical column to facet plots by:",
                                      choices = c("category", "subcategory", "genus", "species"),
                                      selected = "category"),
-                         numericInput("pie_width", "Width (inches):", value = 8, min = 1, max = 20, step = 0.5),
-                         numericInput("pie_height", "Height (inches):", value = 6, min = 1, max = 20, step = 0.5)
+                         numericInput("pie_width", "Width (inches):", value = 8, min = 1, max = 40, step = 0.5),
+                         numericInput("pie_height", "Height (inches):", value = 6, min = 1, max = 40, step = 0.5)
         ),
         
         # NEW: inputs for make_sequence_logos.R
@@ -1247,7 +1249,9 @@ server <- function(input, output, session) {
           outdir = file.path(input$outdir, "figures"),
           column_name = column_name,
           group_var = group_var,
-          additional = additional
+          additional = additional,
+          width = input$violin_width,
+          height = input$violin_height
         )
         
         # Add reference_label if available (but NOT reference_length)

@@ -16,6 +16,7 @@ dependencies:
   - r-essentials
   - r-ggseqlogo
   - r-gridextra
+  - r-hmisc
   - r-moments
   - r-pdftools
   - r-reticulate

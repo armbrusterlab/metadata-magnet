@@ -9,5 +9,6 @@ nextflow/.nextflow/
 nextflow/flowchart.pdf
 nextflow/data/synteny_search_inputs/genome_db/
 nextflow/mucA/
+nextflow/mucA22/
 nextflow/wspF/
 nextflow/example_data/toydb/*
