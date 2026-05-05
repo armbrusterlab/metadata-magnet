@@ -1,0 +1,12 @@
+# local metadata retrieval, no synteny search
+
+queryFasta: 'example_data/wspF_PAO1.fasta'
+blastPath: 'example_data/toydb/'
+blastName: 'toydb'
+separateIDs: 'true'
+
+filterByOrganism: 'true'
+
+genomeDBmetadata: 'example_data/genome_db/'
+
+align: 'true'

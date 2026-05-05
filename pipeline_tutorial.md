@@ -48,7 +48,9 @@ unzip toydb.zip
 cd .. # metadata-magnet/nextflow dir
 nextflow run main.nf -params-file example_data/input.yaml -output-dir my_test_results -with-report my_test_results/report.html
 ```
-You can compare the outputs against those in the example_results dir.
+You can compare the outputs against those in the example_results dir.  
+The example above retrieves metadata as part of the synteny search. If you would like to try metadata retrieval from a local database (i.e. the set of genes from which the BLAST database was built), you can use -params-file example_data/input2.yaml. If you would like to try NCBI esearch metadata retrieval, then delete "genomeDBmetadata: 'example_data/genome_db/'" from input2.yaml.
+
 
 ## Example run: setup, Nextflow, R Shiny GUI
 ### Prepare BLAST database of bacterial proteins

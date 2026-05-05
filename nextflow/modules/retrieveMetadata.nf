@@ -72,7 +72,7 @@ process retrieveMetadata {
     export retrievalLog='retrieveMetadata.log'
     
     firstGID=\$(head -n 1 ${inputFile} | cut -f 1) 
-    if [[ "\$firstGID" != "0" && -d ${genomeDBmetadata} ]]; then # assume we have genome IDs, so we can perform local database search
+    if [[ "\$firstGID" != "0" && -d "${genomeDBmetadata}" ]]; then # assume we have genome IDs, so we can perform local database search
         echo "Performing local database search..."
         projDir="${workflow.projectDir}"
         bash "\$projDir/../scripts/blast_processing/local_metadata_retrieval.sh" ${genomeDBmetadata} ${inputFile}
