@@ -40,7 +40,12 @@ The main Nextflow script for this pipeline is main.nf.
 ## Example run: quickstart
 If you would simply like to confirm that the pipeline works, you may run the following code and compare the outputs against those in the metadata-magnet/nextflow/test_results dir.
 ```bash
-cd metadata-magnet/nextflow
+# unzip the BLAST database
+cd metadata-magnet/nextflow/example_data/
+gunzip toydb.zip.gz
+unzip toydb.zip
+
+cd .. # metadata-magnet/nextflow dir
 nextflow run main.nf -params-file example_data/input.yaml -output-dir my_test_results -with-report my_test_results/report.html
 ```
 You can compare the outputs against those in the example_results dir.
@@ -171,9 +176,11 @@ rm ${datadir}/toydb/comprehensive.fasta
 
 Because the files for this database are large, I was unable to include them in the repository. I have, however, included them in a zipped form in case you are unable to run make_blastdb_from_genomes.sh.
 ```bash
+cd metadata-magnet/nextflow/example_data/
+
 # two stages of unzipping
-gunzip "metadata-magnet/nextflow/example_data/toydb.zip.gz"
-unzip "metadata-magnet/nextflow/example_data/toydb2.zip"
+gunzip toydb.zip.gz
+unzip toydb.zip
 ```
 
 ### Prepare Nextflow params file

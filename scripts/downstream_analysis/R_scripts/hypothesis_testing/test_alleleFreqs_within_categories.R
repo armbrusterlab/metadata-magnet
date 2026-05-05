@@ -54,12 +54,13 @@ test_alleleFreqs_within_categories <- function(df, site, residue, group_var = "c
         # Error handling
         #message("Error: ", e$message)
         cat("Dataset may be too large to run Fisher's exact test with exact p-value; running with simulate.p.value = TRUE\n")
-        test <- fisher_test(xtab, detailed = TRUE, simulate.p.value = TRUE)
+        test <- fisher_test(xtab, detailed = TRUE, simulate.p.value = TRUE, B=2000) # for now, use the default value of B, but B=100000 seems reasonable
         test$p
     }
   )
 
   print(glue("Fisher's exact test: p={p}"))
+  #print(glue("Fisher's exact test: p={format(p, digits = 20, scientific = FALSE)}"))
   
   if (p < 0.05) {
     cat("p from Fisher's exact test is significant (p < 0.05); conducting further comparisons.\n\n")
