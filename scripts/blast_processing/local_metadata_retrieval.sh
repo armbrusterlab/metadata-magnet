@@ -100,18 +100,18 @@ get_metadata() {
     # metadata that pertains to this particular sequence
     # if the same protein id is associated with multiple locus tags, get all of them
     # when joining the metadata to the FASTA of homologs, any records with locus tags that don't match will fall out anyway 
-    sequences=$(zcat "$genbank_file" | awk -v protein_id="$protein_id" '$0 ~ protein_id, /  gene  /' | \
+    sequences=$(zcat "$genbank_file" | awk -v pid="$protein_id" '$0 ~ "/protein_id=\"" pid "\"", /  gene  /' | \
         awk '/translation="/ {flag=1; sub(/.*translation="/, ""); seq=""} 
         flag {seq = seq $0} 
         flag && /"/ {flag=0; sub(/".*/, "", seq); gsub(/[ \t\n\r]+/, "", seq); print seq}')
 
-    # awk doesn't have noncapturing groups so you have to manually clean the locus_tag" and " 
-    locus_tags=$(zcat "$genbank_file" | awk -v protein_id="$protein_id" '
-        /locus_tag=/ {
-            match($0, /locus_tag="([^"]+)"/)
-            cleaned = substr($0, RSTART+11, RLENGTH-12) 
+    # awk doesn't have noncapturing groups so you have to manually clean the /locus_tag" and " 
+    locus_tags=$(zcat "$genbank_file" | awk -v pid="$protein_id" '
+        /\/locus_tag=/ {
+            match($0, /\/locus_tag="([^"]+)"/)
+            cleaned = substr($0, RSTART+12, RLENGTH-13)
         }
-        $0 ~ protein_id { print cleaned }')
+        $0 ~ "/protein_id=\"" pid "\"" { print cleaned }')
 
     # write metadata on a per-locus-tag basis
     paste <(echo "$sequences" | tr ' ' '\n') <(echo "$locus_tags" | tr ' ' '\n') | while read sequence locus_tag; do 

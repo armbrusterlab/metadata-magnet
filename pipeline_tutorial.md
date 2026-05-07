@@ -15,7 +15,14 @@ Clone the repository.
 ```bash
 git clone https://github.com/armbrusterlab/metadata-magnet.git
 ```
-[Install Nextflow](https://www.nextflow.io/docs/latest/install.html) to run the pipeline.  
+[Install Nextflow](https://www.nextflow.io/docs/latest/install.html) version 26.04.0 to run the pipeline. Nextflow is under active development, so if you are using a different version, changes to Nextflow syntax may cause bugs in the pipeline.  
+```
+conda create --name nf-env bioconda::nextflow==26.04.0
+conda activate nf-env
+export PATH="$CONDA_PREFIX/bin:$PATH"
+export NXF_SYNTAX_PARSER=v2
+```
+
 If you would like to use the GUI to produce figures and statistical analyses from the pipeline outputs, activate the metadata-magnet-env conda environment (explained below).  
 
 Nextflow automatically handles conda environment management. However, to use pipeline scripts as standalone functions, you will need to create and activate conda environments from the corresponding YAML files.
@@ -44,6 +51,11 @@ If you would simply like to confirm that the pipeline works, you may run the fol
 cd metadata-magnet/nextflow/example_data/
 gunzip toydb.zip.gz
 unzip toydb.zip
+
+# use nextflow version 26.04.0
+conda activate nf-env
+export PATH="$CONDA_PREFIX/bin:$PATH"
+export NXF_SYNTAX_PARSER=v2
 
 cd .. # metadata-magnet/nextflow dir
 nextflow run main.nf -params-file example_data/input.yaml -output-dir my_test_results -with-report my_test_results/report.html
@@ -205,12 +217,17 @@ Please provide a real email address so that NCBI can contact you about issues in
 * For metadata categorization, the nextflow/data/category_keywords.txt and nextflow/data/subcategory_keywords.txt are used. You may add to these files if you wish. In each section (delimited by ***), the first line is the name of the category or subcategory, and all following lines are the keywords corresponding to that category or subcategory.
 
 ### Run the Nextflow pipeline
-Make sure that Nextflow is installed. You don't need to activate any Conda environments; Nextflow will handle it. Currently, only Conda is supported for dependency management, but we are working on adding Singularity support.
+Make sure that Nextflow version 26.04.0 is installed. You don't need to activate any Conda environments; Nextflow will handle it. Currently, only Conda is supported for dependency management, but we are working on adding Singularity support.
 Execution may take several hours. The most time-consuming steps are the initial BLAST, the metadata retrieval (especially if retrieving via NCBI esearch, as rate-limiting is necessary), and the synteny search.
 ```bash
 tmux new -s nextflow # optional but recommended for longer runs
 cd metadata-magnet/nextflow/ # need to be in the same directory as main.nf and nextflow.config
 mv example_results/ example_results_old/ # outdir files persist even when the pipeline is rerun with the same outdir, so it's recommended to move/delete the old outputs or use a new outdir name
+
+# use nextflow version 26.04.0
+conda activate nf-env
+export PATH="$CONDA_PREFIX/bin:$PATH"
+export NXF_SYNTAX_PARSER=v2
 
 nextflow run main.nf -params-file example_data/input.yaml -output-dir example_results -with-report example_results/report.html
 ```

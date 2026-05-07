@@ -8,6 +8,7 @@ nextflow/.nextflow.log*
 nextflow/.nextflow/
 nextflow/flowchart.pdf
 nextflow/data/synteny_search_inputs/genome_db/
+nextflow/my_test_results/
 nextflow/mucA/
 nextflow/mucA_metadataFixed/
 nextflow/mucA22/

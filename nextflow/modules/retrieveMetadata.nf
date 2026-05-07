@@ -1,15 +1,17 @@
+nextflow.enable.types = true // required for nullable inpputs; syntax may change with future Nextflow releases
+
 process retrieveMetadata {
     conda "${workflow.projectDir}/envs/metadata-magnet-env.yaml"
 
     input:
-    val signal
-    path inputFile // a blast file
-    val splitSize // segmenting for metadata retrieval
-    val email // for NCBI esearch
-    path genomeDBmetadata // for local metadata retrieval
+    signal: String
+    inputFile: Path // a blast file
+    splitSize: String // segmenting for metadata retrieval
+    email: String // for NCBI esearch
+    genomeDBmetadata: Path? // for local metadata retrieval
 
     output:
-    path "*_metadata.blast" 
+    file("*_metadata.blast")
 
     when:
     signal == "true"
@@ -77,6 +79,7 @@ process retrieveMetadata {
         projDir="${workflow.projectDir}"
         bash "\$projDir/../scripts/blast_processing/local_metadata_retrieval.sh" ${genomeDBmetadata} ${inputFile}
         Rscript "\$projDir/../scripts/blast_processing/local_metadata_deduplicate.R" "local_metadata.blast" "local_metadata.blast"
+        
     else # we do need to get metadata from blast2gen.py
         echo "Performing NCBI esearch..."
         # file splitting
