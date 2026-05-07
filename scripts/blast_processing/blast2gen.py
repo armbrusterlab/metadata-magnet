@@ -246,8 +246,8 @@ def main(input_blast, output_tsv, email = "example@mail.com"):
     # and place them such that the output can be plugged directly into convert_blast_to_fasta.sh
     final_df = blast_df[['assembly_accession', 'subject', 'protein_seq', 'evalue', 'title_old', 'locus_tag', 'organism',
                          'nucleotide_accession', 'bioproject_accession', 'genome_id_old', 'organism_old',
-                         'isolation_source', 'sequencing_technology', 'titles', 'assembly_method',
-                         'genome_coverage', 'sequence_old', 'isolation_site']] # removed 'protein_id' because it was redundant
+                         'isolation_source', 'sequencing_technology', 'genome_coverage', 'assembly_method',
+                         'titles', 'assembly_method','sequence_old', 'isolation_site']] # removed 'protein_id' because it was redundant
                          
     # rename columns for compatibility with downstream analysis functions in the GUI
     final_df.rename(columns={'assembly_accession': 'genome_id', 'protein_seq': 'sequence'}, inplace=True)

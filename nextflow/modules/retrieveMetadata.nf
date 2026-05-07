@@ -76,6 +76,7 @@ process retrieveMetadata {
         echo "Performing local database search..."
         projDir="${workflow.projectDir}"
         bash "\$projDir/../scripts/blast_processing/local_metadata_retrieval.sh" ${genomeDBmetadata} ${inputFile}
+        Rscript "\$projDir/../scripts/blast_processing/local_metadata_deduplicate.R" "local_metadata.blast" "local_metadata.blast"
     else # we do need to get metadata from blast2gen.py
         echo "Performing NCBI esearch..."
         # file splitting

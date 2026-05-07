@@ -98,27 +98,25 @@ get_metadata() {
     genome_coverage=$(zcat $genbank_file | awk '$0 ~/Genome Coverage/ { sub(/^[^:]*[: ]+/, ""); print }' | head -n 1)
 
     # metadata that pertains to this particular sequence
-    # if there are multiple matches to $protein_id (which might be the case- the same protein may appear on multiple loci), this only returns the first.
-    # while it is possible to get metadata for all loci with this protein, I am wary of overrepresenting the isolation source metadata for genomes that have multiple copies of a protein.
-    sequence=$(zcat "$genbank_file" | awk -v tag="$protein_id" '$0 ~ tag, /  gene  /' | \
-        awk '/translation="/ {flag=1; sub(/.*translation="/, "")} flag && /"/ {flag=0; sub(/".*/, ""); print} flag' | \
-        tr -d '[:space:]') # in the .gbff, the sequence was split over multiple lines; this combines it into a single line
+    # if the same protein id is associated with multiple locus tags, get all of them
+    # when joining the metadata to the FASTA of homologs, any records with locus tags that don't match will fall out anyway 
+    sequences=$(zcat "$genbank_file" | awk -v protein_id="$protein_id" '$0 ~ protein_id, /  gene  /' | \
+        awk '/translation="/ {flag=1; sub(/.*translation="/, ""); seq=""} 
+        flag {seq = seq $0} 
+        flag && /"/ {flag=0; sub(/".*/, "", seq); gsub(/[ \t\n\r]+/, "", seq); print seq}')
 
-    locus_tag=$(zcat "$genbank_file" |
-        awk -v pid="$protein_id" '
-            /locus_tag="/ {
-                # extract the value inside quotes
-                match($0, /locus_tag="([^"]+)"/, m)
-                if (m[1] != "") last = m[1]
-            }
-            $0 ~ pid {
-                print last
-                exit
-            }
-        '
-    )
+    # awk doesn't have noncapturing groups so you have to manually clean the locus_tag" and " 
+    locus_tags=$(zcat "$genbank_file" | awk -v protein_id="$protein_id" '
+        /locus_tag=/ {
+            match($0, /locus_tag="([^"]+)"/)
+            cleaned = substr($0, RSTART+11, RLENGTH-12) 
+        }
+        $0 ~ protein_id { print cleaned }')
 
-    echo "$genome_id	$protein_id	$sequence	$evalue	$title_old	$locus_tag	$organism	$isolation_source	$titles	$seq_tech	$asm_method	$genome_coverage	$isolation_site	$sequence_old	$organism_old" >> $metadata_file
+    # write metadata on a per-locus-tag basis
+    paste <(echo "$sequences" | tr ' ' '\n') <(echo "$locus_tags" | tr ' ' '\n') | while read sequence locus_tag; do 
+        echo "$genome_id	$protein_id	$sequence	$evalue	$title_old	$locus_tag	$organism	$isolation_source	$titles	$asm_method	$seq_tech	$genome_coverage	$isolation_site	$sequence_old	$organism_old" >> $metadata_file
+    done
 }
 
 export -f get_metadata
