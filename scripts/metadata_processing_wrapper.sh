@@ -50,10 +50,11 @@ spec.loader.exec_module(mp)
 
 # guess the metadata origin
 origin = mp.determine_origin("$metadata_file")
-print(f"Inferred metadata origin: {origin}")
 if (origin == 'synteny_summary'):
-  print("(If local metadata retrieval was performed, the line above will read 'synteny_summary' even if no synteny search was performed.)")
-if origin not in ['synteny_summary', 'fetched']:
+  print(f"Inferred metadata origin: synteny summary or local .gbff database search")
+elif (origin == 'fetched'):
+  print(f"Inferred metadata origin: fetched using NCBI esearch")
+else:
   raise Exception(f"Invalid origin {origin}")
 
 mp.rescue_source("$metadata_file", origin, outname="$out")

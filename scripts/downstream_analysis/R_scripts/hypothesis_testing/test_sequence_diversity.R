@@ -1,4 +1,5 @@
 library(tidyverse)
+library(rstatix)
 library(stringdist)
 library(glue)
 theme_set(theme_bw())

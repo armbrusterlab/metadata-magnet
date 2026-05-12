@@ -19,7 +19,6 @@ git clone https://github.com/armbrusterlab/metadata-magnet.git
 ```
 conda create --name nf-env bioconda::nextflow==26.04.0
 conda activate nf-env
-export PATH="$CONDA_PREFIX/bin:$PATH"
 export NXF_SYNTAX_PARSER=v2
 ```
 
@@ -54,14 +53,23 @@ unzip toydb.zip
 
 # use nextflow version 26.04.0
 conda activate nf-env
-export PATH="$CONDA_PREFIX/bin:$PATH"
 export NXF_SYNTAX_PARSER=v2
 
 cd .. # metadata-magnet/nextflow dir
 nextflow run main.nf -params-file example_data/input.yaml -output-dir my_test_results -with-report my_test_results/report.html
+# You can compare the output benchmarking file against the file in nextflow/example_results/benchmarkingFinal to confirm that the run executed properly. 
 ```
-You can compare the outputs against those in the example_results dir.  
-The example above retrieves metadata as part of the synteny search. If you would like to try metadata retrieval from a local database (i.e. the set of genes from which the BLAST database was built), you can use -params-file example_data/input2.yaml. If you would like to try NCBI esearch metadata retrieval, then delete "genomeDBmetadata: 'example_data/genome_db/'" from input2.yaml.
+ 
+The example above retrieves metadata as part of the synteny search. If you would like to try metadata retrieval from a local database (i.e. the set of genes from which the BLAST database was built), you can use -params-file example_data/input2.yaml.
+```bash
+conda activate nf-env
+export NXF_SYNTAX_PARSER=v2
+
+# cd to metadata-magnet/nextflow dir
+nextflow run main.nf -params-file example_data/input2.yaml -output-dir my_test_results2 -with-report my_test_results2/report.html
+# You can compare the output benchmarking file against the file in nextflow/example_results2/benchmarkingFinal to confirm that the run executed properly. 
+```
+If you would like to try NCBI esearch metadata retrieval, then replace "genomeDBmetadata: 'example_data/genome_db/'" in input2.yaml with "entrezEmail: 'your_email_here@mail.com'".
 
 
 ## Example run: setup, Nextflow, R Shiny GUI
@@ -226,7 +234,6 @@ mv example_results/ example_results_old/ # outdir files persist even when the pi
 
 # use nextflow version 26.04.0
 conda activate nf-env
-export PATH="$CONDA_PREFIX/bin:$PATH"
 export NXF_SYNTAX_PARSER=v2
 
 nextflow run main.nf -params-file example_data/input.yaml -output-dir example_results -with-report example_results/report.html

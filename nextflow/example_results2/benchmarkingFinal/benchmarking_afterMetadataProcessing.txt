@@ -1,0 +1,35 @@
+[1] TRUE
+Number of BLAST hits: 3223
+Number of unique genome IDs: 84
+Number of unique sequence IDs: 1887
+Number of unique sequences: 1447
+Number of unique titles: 3200
+Number of unique organisms: 44
+# A tibble: 84 × 2
+   genome_id           n
+   <chr>           <int>
+ 1 GCF_003731885.1    56
+ 2 GCF_013409685.2    55
+ 3 GCF_055406285.1    51
+ 4 GCF_002883245.1    50
+ 5 GCF_017350185.1    50
+ 6 GCF_001838695.1    49
+ 7 GCF_013385535.1    49
+ 8 GCF_029335335.1    49
+ 9 GCF_003700725.1    48
+10 GCF_003700875.1    47
+# ℹ 74 more rows
+Number of hits from original BLAST: 3223
+Number of hits remaining after filtering to top hit per organism: 44
+
+Inferred metadata origin: synteny summary or local .gbff database search
+Metadata with rescued isolation sources written to file local_metadata_processedMetadata.blast
+Will rescue missing categories and subcategories for local_metadata_processedMetadata.blast using rescued_source column.
+Will rescue missing categories and subcategories for local_metadata_processedMetadata.blast using isolation_site column.
+Isolation source categories and subcategories written to file local_metadata_processedMetadata.blast
+Successfully read 44 rows (some lines may have been skipped)
+There are 44 lines in the metadata file.
+27 rows were associated with isolation source metadata.
+Among the 17 rows without isolation source, 7 isolation sources were rescued from the titles or isolation_site column, making 34 rows eligible for categorization.
+31 rows were successfully assigned a category, and 22 rows were successfully assigned a subcategory.
+

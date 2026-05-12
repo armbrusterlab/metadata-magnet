@@ -42,8 +42,7 @@ There are 153 hits for the synteny structure corresponding to outdir strandlessF
 Of these, 68 hits intersected with the original BLAST for your query.
 (Intersected using a pairwise blast of synteny structure hits against the original BLAST hits, requiring at least 99 pident and 90 qcovs to consider a BLAST hit to be a match.)
 
-Inferred metadata origin: synteny_summary
-(If local metadata retrieval was performed, the line above will read 'synteny_summary' even if no synteny search was performed.)
+Inferred metadata origin: synteny summary or local .gbff database search
 Metadata with rescued isolation sources written to file negBackward_synteny_summary_processedMetadata.blast
 Will rescue missing categories and subcategories for negBackward_synteny_summary_processedMetadata.blast using rescued_source column.
 Will rescue missing categories and subcategories for negBackward_synteny_summary_processedMetadata.blast using isolation_site column.
@@ -54,8 +53,7 @@ There are 102 lines in the metadata file.
 Among the 31 rows without isolation source, 12 isolation sources were rescued from the titles or isolation_site column, making 83 rows eligible for categorization.
 76 rows were successfully assigned a category, and 66 rows were successfully assigned a subcategory.
 
-Inferred metadata origin: synteny_summary
-(If local metadata retrieval was performed, the line above will read 'synteny_summary' even if no synteny search was performed.)
+Inferred metadata origin: synteny summary or local .gbff database search
 Metadata with rescued isolation sources written to file negForward_synteny_summary_processedMetadata.blast
 Will rescue missing categories and subcategories for negForward_synteny_summary_processedMetadata.blast using rescued_source column.
 Will rescue missing categories and subcategories for negForward_synteny_summary_processedMetadata.blast using isolation_site column.
@@ -66,8 +64,7 @@ There are 1 lines in the metadata file.
 Among the 0 rows without isolation source, 0 isolation sources were rescued from the titles or isolation_site column, making 1 rows eligible for categorization.
 1 rows were successfully assigned a category, and 1 rows were successfully assigned a subcategory.
 
-Inferred metadata origin: synteny_summary
-(If local metadata retrieval was performed, the line above will read 'synteny_summary' even if no synteny search was performed.)
+Inferred metadata origin: synteny summary or local .gbff database search
 Metadata with rescued isolation sources written to file posBackward_synteny_summary_processedMetadata.blast
 Will rescue missing categories and subcategories for posBackward_synteny_summary_processedMetadata.blast using rescued_source column.
 Will rescue missing categories and subcategories for posBackward_synteny_summary_processedMetadata.blast using isolation_site column.
@@ -78,8 +75,7 @@ There are 9 lines in the metadata file.
 Among the 3 rows without isolation source, 3 isolation sources were rescued from the titles or isolation_site column, making 9 rows eligible for categorization.
 9 rows were successfully assigned a category, and 7 rows were successfully assigned a subcategory.
 
-Inferred metadata origin: synteny_summary
-(If local metadata retrieval was performed, the line above will read 'synteny_summary' even if no synteny search was performed.)
+Inferred metadata origin: synteny summary or local .gbff database search
 Metadata with rescued isolation sources written to file posForward_synteny_summary_processedMetadata.blast
 Will rescue missing categories and subcategories for posForward_synteny_summary_processedMetadata.blast using rescued_source column.
 Will rescue missing categories and subcategories for posForward_synteny_summary_processedMetadata.blast using isolation_site column.
@@ -90,8 +86,7 @@ There are 7 lines in the metadata file.
 Among the 1 rows without isolation source, 0 isolation sources were rescued from the titles or isolation_site column, making 6 rows eligible for categorization.
 6 rows were successfully assigned a category, and 3 rows were successfully assigned a subcategory.
 
-Inferred metadata origin: synteny_summary
-(If local metadata retrieval was performed, the line above will read 'synteny_summary' even if no synteny search was performed.)
+Inferred metadata origin: synteny summary or local .gbff database search
 Metadata with rescued isolation sources written to file strandlessBackward_synteny_summary_processedMetadata.blast
 Will rescue missing categories and subcategories for strandlessBackward_synteny_summary_processedMetadata.blast using rescued_source column.
 Will rescue missing categories and subcategories for strandlessBackward_synteny_summary_processedMetadata.blast using isolation_site column.
@@ -102,8 +97,7 @@ There are 27 lines in the metadata file.
 Among the 9 rows without isolation source, 1 isolation sources were rescued from the titles or isolation_site column, making 19 rows eligible for categorization.
 18 rows were successfully assigned a category, and 11 rows were successfully assigned a subcategory.
 
-Inferred metadata origin: synteny_summary
-(If local metadata retrieval was performed, the line above will read 'synteny_summary' even if no synteny search was performed.)
+Inferred metadata origin: synteny summary or local .gbff database search
 Metadata with rescued isolation sources written to file strandlessForward_synteny_summary_processedMetadata.blast
 Will rescue missing categories and subcategories for strandlessForward_synteny_summary_processedMetadata.blast using rescued_source column.
 Will rescue missing categories and subcategories for strandlessForward_synteny_summary_processedMetadata.blast using isolation_site column.
