@@ -44,6 +44,7 @@ conda activate metadata-magnet-env
 The main Nextflow script for this pipeline is main.nf.
 
 ## Example run: quickstart
+### Nextflow quickstart
 If you would simply like to confirm that the pipeline works, you may run the following code and compare the outputs against those in the metadata-magnet/nextflow/test_results dir.
 ```bash
 # unzip the BLAST database
@@ -69,8 +70,33 @@ export NXF_SYNTAX_PARSER=v2
 nextflow run main.nf -params-file example_data/input2.yaml -output-dir my_test_results2 -with-report my_test_results2/report.html
 # You can compare the output benchmarking file against the file in nextflow/example_results2/benchmarkingFinal to confirm that the run executed properly. 
 ```
-If you would like to try NCBI esearch metadata retrieval, then replace "genomeDBmetadata: 'example_data/genome_db/'" in input2.yaml with "entrezEmail: 'your_email_here@mail.com'".
+If you would like to try NCBI esearch metadata retrieval, then replace "genomeDBmetadata: 'example_data/genome_db/'" in input2.yaml with "entrezEmail: 'your_email_here@mail.com'". Please use a real email address.
 
+### GUI quickstart
+For instructions on how to launch the GUI, refer to [this section](https://github.com/armbrusterlab/metadata-magnet/blob/main/pipeline_tutorial.md#open-the-gui).  
+Once the GUI has been opened in a web browser, proceed with the example run. For the input files, you may use absolute paths, or paths relative to the current directory at the time of launching the GUI. (Brief testing suggests that tilde expansion, i.e. using ~ to represent the home directory, works while ${HOME} fails.) Below, we assume that the current working directory is directly above the metadata-magnet directory. It is okay if filepaths are surrounded with double quotes.   
+
+* At the top, select "Aligned" for FASTA type.   
+* FASTA (aligned):
+```
+"metadata-magnet/nextflow/wspF/fasta/aligned/negBackward_filteredSynteny_pident99_qcovs90_aligned.fasta"
+```
+* Metadata corresponding to sequences in the FASTA (it is okay if this is a superset or subset of sequences in the FASTA):
+```
+"metadata-magnet/nextflow/wspF/metadata/negBackward_synteny_summary_processedMetadata.blast"
+```
+* Outdir:
+```
+metadata-magnet/nextflow/wspF/my_gui_outputs
+# you may compare against subdirs of metadata-magnet/nextflow/wspF/gui
+```
+Submit the above inputs. Ignore the name map file field- the corresponding feature has not yet been implemented.
+
+* Reference sequence (has a separate submission button):
+```
+GCF_023806395.1-WP_003092534.1-NFP14.RS02845
+```
+Now you can filter the input data, produce figures, and run statistical tests. Note that statistical tests may fail if the grouping variable has only one level (e.g. after filtering to only Pseudomonas genus, you attempt to run test_quantResponse_categPredictor.R with "genus" as the predictor). If the GUI crashes, you may refresh the web browser and re-enter the inputs. 
 
 ## Example run: setup, Nextflow, R Shiny GUI
 ### Prepare BLAST database of bacterial proteins
@@ -278,7 +304,7 @@ When you are done with the GUI, press Ctrl + C in the terminal to disconnect fro
 #### Load data
 <img width="582" height="709" alt="image" src="https://github.com/user-attachments/assets/d745cf29-eb65-475f-9d61-0163e42a5d8c" />  
 
-Use absolute paths. Replace with the paths to the respective files on your own device. It is okay for the paths and output directory to be surrounded by quotes.   
+We suggest using absolute paths, though relative paths from the current working directory at the time of launching the GUI should also work. Replace with the paths to the respective files on your own device. It is okay for the paths and output directory to be surrounded by quotes.   
 The reference sequence ID, if you provide it, must match exactly with the sequence's name in the FASTA. Note that if you filter out the reference sequence from your dataset, it won't appear in figures.  
 You may see two sequence columns: sequence.x and sequence.y. This is a byproduct of joining the FASTA with the metadata. I _think_ these columns are identical under most circumstances, with sequence.x coming from the FASTA and sequence.y coming from the metadata table, but you should press the "Save current data to TSV" and inspect it to be certain. (Note to self: previous iterations of the pipeline used aligned fragments from BLAST for the FASTA sequences; current iteration pulls the sequence directly from the GenBank files or NCBI esearch. Aligned fragments may appear in sequence_old column.)
 
