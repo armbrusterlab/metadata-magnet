@@ -79,16 +79,15 @@ Once the GUI has been opened in a web browser, proceed with the example run. For
 * At the top, select "Aligned" for FASTA type.   
 * FASTA (aligned):
 ```
-"metadata-magnet/nextflow/wspF/fasta/aligned/negBackward_filteredSynteny_pident99_qcovs90_aligned.fasta"
+"metadata-magnet/nextflow/example_results/fasta/aligned/negBackward_filteredSynteny_pident99_qcovs90_aligned.fasta"
 ```
 * Metadata corresponding to sequences in the FASTA (it is okay if this is a superset or subset of sequences in the FASTA):
 ```
-"metadata-magnet/nextflow/wspF/metadata/negBackward_synteny_summary_processedMetadata.blast"
+"metadata-magnet/nextflow/example_results/metadata/negBackward_synteny_summary_processedMetadata.blast"
 ```
-* Outdir:
+* Outdir: (you may compare files against subdirs of metadata-magnet/nextflow/example_results/gui)
 ```
-metadata-magnet/nextflow/wspF/my_gui_outputs
-# you may compare against subdirs of metadata-magnet/nextflow/wspF/gui
+metadata-magnet/nextflow/example_results/my_gui_outputs
 ```
 Submit the above inputs. Ignore the name map file field- the corresponding feature has not yet been implemented.
 

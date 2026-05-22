@@ -13,8 +13,14 @@
 library(tidyverse) # working with dataframes
 library(seqinr) # to read alignments
 library(glue) # fstrings
+
 library(reticulate) # call Python functions
-use_condaenv("metadata-magnet-env", required = TRUE)
+conda_prefix <- Sys.getenv("CONDA_PREFIX") # before running, you should activate metadata-magnet-env in bash
+if (basename(conda_prefix) != "metadata-magnet-env") {
+  stop("Please conda activate metadata-magnet-env before running the GUI")
+}
+use_condaenv(conda_prefix, required = TRUE)
+use_python(file.path(conda_prefix, "bin", "python"), required = TRUE)
 reticulate::py_config()
 #library(here) # finds the project root
 
