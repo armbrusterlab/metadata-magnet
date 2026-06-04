@@ -11,10 +11,10 @@ def extract_gene(gb_file, outname, overwrite = True, asm = None, target = None, 
 
     asm: assembly accession (i.e. name of dir to look in when searching genome_db for GBFF to retrieve metadata from later); a failsafe for inference from gb_file path
 
-    target = query name; target_type indicates where in the record to search for the target
-    (e.g. target = "mucA", target_type = "gene"; 
-    target = "NP_249454.1", target_type = "protein_id"; 
-    target = "PA0763", target_type = "locus_tag")
+    target = query name (list); target_type indicates where in the record to search for the target
+    (e.g. target = ["mucA", "wspF"], target_type = "gene"; 
+    target = ["NP_249454.1"], target_type = "protein_id"; 
+    target = ["PA0763"], target_type = "locus_tag")
     Please note that if the target matches multiple sequences, then multiple sequences will be written to outname.
 
     Buffers are defined in terms of bp.
@@ -32,7 +32,8 @@ def extract_gene(gb_file, outname, overwrite = True, asm = None, target = None, 
     for record in SeqIO.parse(gb_file, "genbank"):
         for feature in record.features:
             if feature.type == "CDS":
-                if target is None or target_type is None or feature.qualifiers.get(target_type) == [target]:
+                if target is None or target_type is None or feature.qualifiers.get(target_type, ["N/A"])[0] in target: 
+                    # expect the 0-th element to be the only element
                     # Get location, handling strand direction
                     loc = feature.location
                     # Extract start/end with flanking buffer
@@ -40,18 +41,23 @@ def extract_gene(gb_file, outname, overwrite = True, asm = None, target = None, 
                     end = min(len(record.seq), loc.end + buffer_downstream)
                     # Slice and extract
                     flanked_seq = record.seq[start:end]
+
+                    # important: strand info is encoded at feature.location.strand. If negative strand, need to reverse complement.
+                    if loc.strand == -1:
+                        flanked_seq = flanked_seq.reverse_complement()
+
                     if translate:
                         flanked_seq = flanked_seq.translate(to_stop=True)
 
                     locus_tag = feature.qualifiers.get("locus_tag", ["N/A"])[0]
                     protein_id = feature.qualifiers.get("protein_id", ["N/A"])[0]
-                    protein_name = feature.qualifiers.get("product", ["N/A"])[0]
-                    cds_seq = feature.extract(record.seq)
+                    product = feature.qualifiers.get("product", ["N/A"])[0]
+                    gene = feature.qualifiers.get("gene", ["N/A"])[0]
 
                     # Create a new SeqRecord
                     new_record = SeqRecord(
                         flanked_seq,
-                        id=f"{assembly_accession}-{protein_id}-{locus_tag} | {protein_name} |",
+                        id=f"{assembly_accession}-{protein_id}-{locus_tag} | {gene} | {product} |",
                         description=f"buffer: upstream +{loc.start-start} bp, downstream +{end-loc.end} bp"
                     )
 

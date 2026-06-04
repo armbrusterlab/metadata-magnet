@@ -292,6 +292,10 @@ If running on a Unix/Linux server, take the following steps to view the GUI:
    ```bash
    conda activate metadata-magnet-env
    Rscript metadata-magnet/scripts/downstream_analysis/R_scripts/pipeline_gui.R
+   ```  
+   If the terminal displays an error related to Python 3.13, you may need to provide execute permissions to Python within the metadata-magnet-env environment. Please replace the filepath with the path to your copy of metadata-magnet-env.
+   ```bash
+   chmod +x "/home/kcw2/miniconda3/envs/metadata-magnet-env/bin/python" # soft-linked to python3.13
    ```
 3. Replace \<server-ip\> with your IP address, and open the link in a web browser. The GUI webpage will be ready when the terminal reads "Listening on http://0.0.0.0:3838". 
    ```text
