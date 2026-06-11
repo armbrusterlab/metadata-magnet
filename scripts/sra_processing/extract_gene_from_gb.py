@@ -2,6 +2,7 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 # from Bio.Seq import Seq
 from pathlib import Path
+from Bio.SeqFeature import SeqFeature, FeatureLocation
 
 def extract_gene(gb_file, outname, overwrite = True, asm = None, target = None, target_type = None, buffer_upstream=0, buffer_downstream=0, translate=False):
     '''
@@ -64,3 +65,76 @@ def extract_gene(gb_file, outname, overwrite = True, asm = None, target = None, 
                     # Save to FASTA
                     with open(outname, "a") as output_handle:
                         SeqIO.write(new_record, output_handle, "fasta")
+
+
+def extract_gene_to_gb(gb_file, outname, overwrite = True, asm = None, target = None, target_type = None, buffer_upstream=0, buffer_downstream=0, translate=False):
+    '''
+    Version that writes to GenBank with CDS annotations.
+    '''
+    assembly_accession = asm if asm is not None else Path(gb_file).parent.name # even if it's not actually an assembly accession, want the dir name so we can use the fasta's seq id to find the original gb_file later
+    # in the context of Nextflow this might be unreliable, but it can serve as a backup
+    # it turns out that it's unnecessarily complicated to get the assembly accession from a GenBank file
+
+    if overwrite:
+        with open(outname, "w"):
+            pass
+
+    for record in SeqIO.parse(gb_file, "genbank"):
+        for feature in record.features:
+            if feature.type == "CDS":
+                if target is None or target_type is None or feature.qualifiers.get(target_type, ["N/A"])[0] in target: 
+                    # expect the 0-th element to be the only element
+                    # Get location, handling strand direction
+                    loc = feature.location
+                    # Extract start/end with flanking buffer
+                    start = max(0, loc.start - buffer_upstream)
+                    end = min(len(record.seq), loc.end + buffer_downstream)
+                    # Slice and extract
+                    flanked_seq = record.seq[start:end]
+
+                    # important: strand info is encoded at feature.location.strand. If negative strand, need to reverse complement.
+                    if loc.strand == -1:
+                        flanked_seq = flanked_seq.reverse_complement()
+
+                    if translate:
+                        flanked_seq = flanked_seq.translate(to_stop=True)
+
+                    locus_tag = feature.qualifiers.get("locus_tag", ["N/A"])[0]
+                    protein_id = feature.qualifiers.get("protein_id", ["N/A"])[0]
+                    product = feature.qualifiers.get("product", ["N/A"])[0]
+                    gene = feature.qualifiers.get("gene", ["N/A"])[0]
+
+                    # Compute CDS coordinates *within the buffered sequence*
+                    cds_start_in_buffer = buffer_upstream
+                    cds_end_in_buffer = buffer_upstream + len(feature.location)
+
+                    # Create SeqRecord for GenBank output
+                    new_record = SeqRecord(
+                        flanked_seq,
+                        id=f"{assembly_accession}-{protein_id}-{locus_tag}",
+                        name=locus_tag,
+                        description=f"{gene} | {product} | buffer: upstream +{loc.start-start} bp, downstream +{end-loc.end} bp"
+                    )
+
+                    new_record.annotations["molecule_type"] = "protein" if translate else "DNA"
+
+                    # Build CDS feature
+                    cds_feature = SeqFeature(
+                        FeatureLocation(cds_start_in_buffer, cds_end_in_buffer, strand=loc.strand),
+                        type="CDS",
+                        qualifiers={
+                            "locus_tag": [locus_tag],
+                            "gene": [gene],
+                            "product": [product],
+                            "protein_id": [protein_id]
+                        }
+                    )
+
+                    # Attach feature
+                    new_record.features.append(cds_feature)
+
+                    # Write GenBank instead of FASTA
+                    with open(outname, "a") as output_handle:
+                        SeqIO.write(new_record, output_handle, "genbank")
+
+
