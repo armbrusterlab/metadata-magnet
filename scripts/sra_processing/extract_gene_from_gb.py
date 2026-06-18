@@ -137,4 +137,3 @@ def extract_gene_to_gb(gb_file, outname, overwrite = True, asm = None, target = 
                     with open(outname, "a") as output_handle:
                         SeqIO.write(new_record, output_handle, "genbank")
 
-
