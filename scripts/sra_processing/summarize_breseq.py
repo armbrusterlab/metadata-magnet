@@ -7,25 +7,29 @@ import pandas as pd
 def write_summary(breseq_dirs, outname, n):
     outname_path = Path(outname)
     outname_path.parent.mkdir(exist_ok=True, parents=True)
-    with open(outname, "w") as out: # first overwrite the file if it exists
-        out.write("source	seq_id	position	mutation	annotation	gene	description\n")
 
-    with open(outname, "a") as out: # using write mode for this part seemed to cause issues
-        with open(breseq_dirs) as f:
-            for line in f:
-                dir = line.strip()
-                print(f"Processing {dir}")
-                summary = f"{dir}/index.html"
-                tab = pd.read_html(summary)
-                df=tab[1]
+    df_all = pd.DataFrame() # it's generally bad practice to grow a df, but this will give flexibility wrt columns of the output df
+    with open(breseq_dirs) as f:
+        for line in f:
+            dir = line.strip()
+            print(f"Processing {dir}")
+            summary = f"{dir}/index.html"
+            tab = pd.read_html(summary)
+            df=tab[1]
 
-                # column 0 of this table featured links to read alignments;
-                # don't need these, so overwrite with breseq outdir name indicating where the variant came from
+            # column 0 of this table featured links to read alignments;
+            # don't need these, so overwrite with breseq outdir name indicating where the variant came from
+            if "Predicted mutations" in list(df.iloc[-2]): # penultimate row should just be "Predicted mutations" for each column
                 name = "/".join(Path(dir).parts[-1 * (n+1):-1])
-                df = df.iloc[0:-2]
-                df[0] = name
+                df.columns = df.iloc[-1] # very last row contains the column names
+                df = df.iloc[:-2] # as described, last two rows don't actually have data
+                if "evidence" in df.columns:
+                    df = df.rename(columns={'evidence': 'source'}) # evidence should be the 0th column. In any case, not needed here; overwrite with name.
+                df["source"] = name # if no source column, will create one.
                 
-                df.to_csv(outname, mode="a", sep="\t", index=False, header=False)
+                df_all = pd.concat([df_all, df], axis=0, join='outer', ignore_index=True)
+
+    df_all.to_csv(outname, sep="\t", index=False, header=True)
                 
     print("Done!")
 
