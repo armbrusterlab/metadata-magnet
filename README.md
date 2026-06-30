@@ -9,7 +9,7 @@
 - [Acknowledgements](#acknowledgements)
 
 ## Introduction
-This pipeline facilitates comparative analysis of bacterial proteins across environmental sources. Using this pipeline, you can retrieve a set of homologs for your bacterial protein of interest and collect the corresponding metadata. Isolation source metadata is automatically categorized according to a curated ontology, facilitating statistical analysis.
+This pipeline facilitates comparative analysis of bacterial proteins across environmental sources. Using this pipeline, you can retrieve a set of homologs for your bacterial protein of interest and collect the corresponding metadata. Isolation source metadata is automatically categorized according to an ontology, greatly reducing the time required to curate data and to bin it for statistical analysis.
 
 A variety of utilities are provided for pipeline outputs: you may filter your homolog dataset in various ways, automatically categorize isolation source metadata into groups such as "clinical" or "natural environment", generate figures to visualize differences between categories, and run statistical tests on allele properties.
 
