@@ -9,11 +9,9 @@
 - [Acknowledgements](#acknowledgements)
 
 ## Introduction
-This pipeline facilitates analysis of the ways in which bacterial protein alleles differ across environmental sources.
+This pipeline facilitates comparative analysis of bacterial proteins across environmental sources. Using this pipeline, you can retrieve a set of homologs for your bacterial protein of interest and collect the corresponding metadata. Isolation source metadata is automatically categorized according to a curated ontology, facilitating statistical analysis.
 
-As of the time of writing, the [NCBI datasets](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/command-line-tools/download-and-install/) tool does not include metadata for bacterial proteins. However, by using this pipeline, you can find a set of homologs for your bacterial protein of interest and collect metadata for these homologs.
-
-A variety of utilities are provided: you may filter your homolog dataset in various ways, automatically categorize isolation source metadata into groups such as "host" or "natural environment", generate figures to visualize differences between categories, and run statistical tests on allele properties.
+A variety of utilities are provided for pipeline outputs: you may filter your homolog dataset in various ways, automatically categorize isolation source metadata into groups such as "clinical" or "natural environment", generate figures to visualize differences between categories, and run statistical tests on allele properties.
 
 ## Pipeline tutorial
 To run the pipeline, please refer to the tutorial linked [here](https://github.com/armbrusterlab/metadata-magnet/blob/main/pipeline_tutorial.md).  
