@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-import sys
+# import sys
+import argparse
 import pandas as pd
+import re
 
-def write_summary(breseq_dirs, outname, n):
+def write_summary(breseq_dirs, outname, n=1, filter_intergenic = False, filter_synonymous = False):
     outname_path = Path(outname)
     outname_path.parent.mkdir(exist_ok=True, parents=True)
 
@@ -14,35 +16,70 @@ def write_summary(breseq_dirs, outname, n):
             dir = line.strip()
             print(f"Processing {dir}")
             summary = f"{dir}/index.html"
-            tab = pd.read_html(summary)
+            tab = pd.read_html(summary, extract_links="body") # need link locations from the evidence column, but this turns all elements into tuples
             df=tab[1]
 
-            # column 0 of this table featured links to read alignments;
-            # don't need these, so overwrite with breseq outdir name indicating where the variant came from
-            if "Predicted mutations" in list(df.iloc[-2]): # penultimate row should just be "Predicted mutations" for each column
-                name = "/".join(Path(dir).parts[-1 * (n+1):-1])
-                df.columns = df.iloc[-1] # very last row contains the column names
-                df = df.iloc[:-2] # as described, last two rows don't actually have data
-                if "evidence" in df.columns:
-                    df = df.rename(columns={'evidence': 'source'}) # evidence should be the 0th column. In any case, not needed here; overwrite with name.
-                df["source"] = name # if no source column, will create one.
+            df.columns = [tup[0] for tup in df.iloc[-1]] # rename df columns so they're referenceable
+            df["evidence_file"] = df["evidence"].apply(lambda x: x[1] if isinstance(x, tuple) else None) # get link locations
+
+            # clean up columns now- no more tuples
+            for col in df.columns:
+                if col != "evidence_file":
+                    df[col] = df[col].apply(lambda x: x[0] if isinstance(x, tuple) else x)
+
+            name = "/".join(Path(dir).parts[-1 * (n+1):-1])
+            df["source"] = name
                 
+            if list(df.iloc[-2])[0] != "Predicted mutations":
+                print(f"Error: predicted mutations table was not retrieved for {dir}")
+            else:
+                df = df.iloc[:-2] # last two rows don't actually have data, so crop them.
                 df_all = pd.concat([df_all, df], axis=0, join='outer', ignore_index=True)
+    # now that all dfs have been joined, filter if requested.
+    if filter_intergenic:
+        print("Filtering out intergenic variants...")
+        df_all = df_all[df_all['annotation'].str.contains('intergenic', na=False) == False]
+
+    if filter_synonymous:
+        print("Filtering out synonymous mutants...")
+        df_all = df_all[df_all['annotation'].apply(find_synonymous) == False]
 
     df_all.to_csv(outname, sep="\t", index=False, header=True)
                 
     print("Done!")
 
-def main(breseq_dirs, outname, n):
-    write_summary(breseq_dirs, outname, n)
+def find_synonymous(s):
+    pattern = r"^([A-Z])[0-9]+([A-Z])?" # capturing groups: the two nucleotides flanking some number
+    found = re.match(pattern, s)
+    if found:
+        return found.group(1) == found.group(2)
+    else: # e.g. if it's an intergenic variant or blank
+        return False
+
+# def main(breseq_dirs, outname, n):
+#     write_summary(breseq_dirs, outname, n)
 
 if __name__ == '__main__':
-    if len(sys.argv) not in (3, 4):
-        print(f"Usage: {sys.argv[0]} breseq_outdir_list.txt output.tsv [num_dirs_in_name_column]")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="A script to summarize breseq outputs.")
 
-    breseq_dirs = sys.argv[1]
-    outname = sys.argv[2]
-    num = int(sys.argv[3]) if len(sys.argv) == 4 else 1
+    # positional arguments (required)
+    parser.add_argument("breseq_dirs", type=str, help='A file containing one breseq output dir per line. Each output dir must contain a breseq output file "index.html".')
+    parser.add_argument("outname", type=str, help="The name of the file to write the results to.")
 
-    main(breseq_dirs, outname, num)
+    # named (optional) arguments
+    parser.add_argument("-n", "--num", type=int, default=1, help="Number of levels of dir names to preserve in the output (source column).")
+    parser.add_argument("-i", "--filter_intergenic", action="store_true", help="Filter out intergenic variants.")
+    parser.add_argument("-s", "--filter_synonymous", action="store_true", help="Filter out synonymous mutations.")
+
+    args = parser.parse_args()
+    write_summary(args.breseq_dirs, args.outname, args.num, args.filter_intergenic, args.filter_synonymous)
+
+    # if len(sys.argv) not in (3, 4):
+    #     print(f"Usage: {sys.argv[0]} breseq_outdir_list.txt output.tsv [num_dirs_in_name_column]")
+    #     sys.exit(1)
+
+    # breseq_dirs = sys.argv[1]
+    # outname = sys.argv[2]
+    # num = int(sys.argv[3]) if len(sys.argv) == 4 else 1
+
+    # main(breseq_dirs, outname, num)
