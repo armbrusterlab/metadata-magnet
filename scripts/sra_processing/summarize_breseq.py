@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-# import sys
 import argparse
 import pandas as pd
 import re
@@ -56,9 +55,6 @@ def find_synonymous(s):
     else: # e.g. if it's an intergenic variant or blank
         return False
 
-# def main(breseq_dirs, outname, n):
-#     write_summary(breseq_dirs, outname, n)
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="A script to summarize breseq outputs.")
 
@@ -73,13 +69,3 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     write_summary(args.breseq_dirs, args.outname, args.num, args.filter_intergenic, args.filter_synonymous)
-
-    # if len(sys.argv) not in (3, 4):
-    #     print(f"Usage: {sys.argv[0]} breseq_outdir_list.txt output.tsv [num_dirs_in_name_column]")
-    #     sys.exit(1)
-
-    # breseq_dirs = sys.argv[1]
-    # outname = sys.argv[2]
-    # num = int(sys.argv[3]) if len(sys.argv) == 4 else 1
-
-    # main(breseq_dirs, outname, num)
