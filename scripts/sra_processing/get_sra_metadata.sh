@@ -22,15 +22,15 @@ import glob
 files = sorted(glob.glob("metadata_pysradb_*.tsv"))
 
 dfs = []
-all_columns = set()
+all_columns = [] # to maintain expected order of columns, use list rather than set
 
 # First pass: discover all columns
 for f in files:
     df = pd.read_csv(f, sep="\t", dtype=str)
     dfs.append(df)
-    all_columns.update(df.columns)
+    all_columns += [col for col in df.columns if col not in all_columns]
 
-all_columns = sorted(all_columns)
+# all_columns = sorted(all_columns)
 
 # Second pass: align each df to the full column set
 aligned = [df.reindex(columns=all_columns) for df in dfs]
