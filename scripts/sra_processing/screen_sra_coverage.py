@@ -17,6 +17,7 @@ def join_data(taxdir, genome_length, taxid, coverage_threshold=30):
     esearch = pd.read_csv(esearch_file, sep=",")
 
     pysradb_file = f"{taxdir}/../metadata_pysradb.tsv"
+    #pysradb = pd.read_csv(pysradb_file, sep="\t", low_memory=False) # get a warning about mixed data types without low_memory=False
     pysradb = pd.read_csv(pysradb_file, sep="\t")
 
     coverage_list = []
@@ -32,10 +33,28 @@ def join_data(taxdir, genome_length, taxid, coverage_threshold=30):
 
         # parse the json
         with open(path, 'r') as file:
-            data = json.load(file)
+            raw = file.read().strip()
+        
+            # if empty file, skip
+            if not raw:
+                print(f"WARNING: empty JSON for {run_id}")
+                coverage_list.append(0)
+                coverage_pass.append(False)
+                continue
+        
+            # if invalid json, skip
+            try:
+                data = json.loads(raw)
+            except json.JSONDecodeError:
+                print(f"WARNING: invalid JSON for {run_id}")
+                coverage_list.append(0)
+                coverage_pass.append(False)
+                continue
+        
+            # if valid JSON, proceed
             match = next((item for item in data[0]["tax_table"] if item["tax_id"] == taxid), None) # there should only be one match
-            num_spots = 0 if match == None else match["total_count"]
-        # print(num_spots)
+            num_spots = 0 if match is None else match["total_count"]
+
 
         # calculate the coverage
         coverage = (spot_factor * num_spots * avg_length) / genome_length
@@ -45,6 +64,7 @@ def join_data(taxdir, genome_length, taxid, coverage_threshold=30):
         coverage_list.append(coverage)
         coverage_pass.append(coverage > coverage_threshold)
 
+
     esearch[f"coverage_taxid_{taxid}"] = coverage_list
     esearch["coverage_pass"] = coverage_pass
     df = pd.DataFrame({'run_id': esearch.Run, 'coverage': coverage_list, 'coverage_pass': coverage_pass})
@@ -53,10 +73,27 @@ def join_data(taxdir, genome_length, taxid, coverage_threshold=30):
 
     df.to_csv(f"{taxdir}/../coverage_taxid_{taxid}.tsv", sep='\t', index=False) # may just name this coverage.tsv, though it's possible to use wildcards to find this tsv
     
-    print("passed length:", len(passed))
+    print("Number of runs with sufficient coverage:", len(passed))
 
-    print(taxdir, genome_length, taxid, coverage_threshold)
+    # print(taxdir, genome_length, taxid, coverage_threshold)
     passed.to_csv(f"{taxdir}/../coverage_pass.txt", sep='\t', index=False, header=False)
+    
+    # join the passed IDs to the metadata
+    passed_df = df[df.coverage_pass == True]
+    df_full = pd.merge(passed_df, esearch, left_on = "run_id", right_on = "Run").drop(columns="Run")
+    df_full = pd.merge(df_full, pysradb, left_on = "run_id", right_on = "run_accession").drop(columns="run_id")
+    
+    # which runs are most space-efficient for coverage?
+    df_full["coverage_megabyte_ratio"] = df_full[f"coverage"] / df_full["size_MB"]
+    
+    # reorganize df: move run accession to front, and rename ambiguously-named columns
+    for c in ["coverage_megabyte_ratio", "run_accession"]:
+      col = df_full.pop(c)
+      df_full.insert(0, col.name, col)
+    
+    df_full.rename(columns={"avgLength":"avg_read_length", "size_MB": "size_megabytes"}, inplace=True)
+
+    df_full.to_csv(f"{taxdir}/../coverage_taxid_{taxid}_passedWithMetadata.tsv", sep='\t', index=False)
 
 
 if __name__ == '__main__':
