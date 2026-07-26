@@ -60,7 +60,7 @@ def join_data(taxdir, genome_length, taxid, coverage_threshold=30):
 
         coverage = (spot_factor * num_spots * avg_length) / genome_length
         coverage_by_run[run_id] = coverage
-        pass_by_run[run_id] = coverage > coverage_threshold
+        pass_by_run[run_id] = coverage >= coverage_threshold
         spots_by_run[run_id] = num_spots
 
     esearch[f"coverage_taxid_{taxid}"] = esearch.Run.astype(str).map(coverage_by_run)
