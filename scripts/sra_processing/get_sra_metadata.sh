@@ -5,12 +5,22 @@
 echo "Fetching metadata from NCBI esearch..."
 esearch -db sra -query "$1" | efetch -format runinfo | cut -d ',' -f 1,7,8 | awk 'NR==1{print;next} {print| "sort -k1,1n -t\",\""}' > metadata_esearch.csv
 
+# if NCBI server access is interrupted, it'll write error messages to the file, so need to remove these lines to avoid downstream problems.
+mv metadata_esearch.csv raw_metadata_esearch.csv
+head -n 1 raw_metadata_esearch.csv > metadata_esearch.csv
+grep "^[DES]R[RXSP]*" raw_metadata_esearch.csv >> metadata_esearch.csv
+
 # must break file into smaller pieces to avoid error from pysradb
 splitSize=100
 split -d -a 2 -l ${splitSize} <(tail -n +2 metadata_esearch.csv) metadata_esearch_ --additional-suffix=.csv # tail gets rid of the header
 
 echo "Fetching metadata from pysradb..."
-for f in $(find -type f -name "metadata_esearch_*" | sort); do echo Processing $f; temp=${f##*_}; num=${temp%.*}; pysradb metadata $(cat $f | cut -f 1 -d ",") --detailed > metadata_pysradb_${num}.tsv; sleep 1; done
+for f in $(find -type f -name "metadata_esearch_*" | sort); do
+    echo Processing $f
+    temp=${f##*_}; num=${temp%.*}
+    pysradb metadata $(cat $f | cut -f 1 -d ",") --detailed > metadata_pysradb_${num}.tsv
+    sleep 1
+done
 
 # rejoin pieces: each pysradb output may have different columns, so you can't just use the column header from the first file.
 echo "Merging pysradb outputs..."

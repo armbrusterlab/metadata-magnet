@@ -21,21 +21,25 @@ def write_summary(breseq_dirs, outdir, n=1, filter_intergenic = False, filter_sy
             tab = pd.read_html(summary, extract_links="body") # need link locations from the evidence column, but this turns all elements into tuples
             for i in range(1, len(tab)):
                 df=tab[i]
-                table_type = list(df.iloc[-2])[0][0]
-                df.columns = [tup[0] for tup in df.iloc[-1]] # rename df columns so they're referenceable; colnames are in last row
+                try:
+                  table_type = list(df.iloc[-2])[0][0]
 
-                if table_type == "Predicted mutations":
-                    df["evidence_file"] = df["evidence"].apply(lambda x: x[1] if isinstance(x, tuple) else None) # get link locations
-
-                # clean up columns now- no more tuples
-                for col in df.columns:
-                    if col != "evidence_file":
-                        df[col] = df[col].apply(lambda x: x[0] if isinstance(x, tuple) else x)
-
-                df = df.iloc[:-2] # last two rows don't actually have data, so crop them.
-
-                name = "/".join(Path(dir).parts[-1 * (n+1):-1])
-                df["source"] = name
+                  df.columns = [tup[0] for tup in df.iloc[-1]] # rename df columns so they're referenceable; colnames are in last row
+  
+                  if table_type == "Predicted mutations":
+                      df["evidence_file"] = df["evidence"].apply(lambda x: x[1] if isinstance(x, tuple) else None) # get link locations
+  
+                  # clean up columns now- no more tuples
+                  for col in df.columns:
+                      if col != "evidence_file":
+                          df[col] = df[col].apply(lambda x: x[0] if isinstance(x, tuple) else x)
+  
+                  df = df.iloc[:-2] # last two rows don't actually have data, so crop them.
+  
+                  name = "/".join(Path(dir).parts[-1 * (n+1):-1])
+                  df["source"] = name
+                except: # the above will fail if no mutations predicted
+                  table_type = None
                     
                 if table_type == 'Predicted mutations':
                     df_mutations = pd.concat([df_mutations, df], axis=0, join='outer', ignore_index=True)
