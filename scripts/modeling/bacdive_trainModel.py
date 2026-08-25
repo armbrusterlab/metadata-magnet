@@ -1,3 +1,5 @@
+# may clean up and encapsulate as functions later, but for now, CD to a new directory to avoid overwriting old results 
+
 import pandas as pd
 import numpy as np
 import joblib
@@ -31,9 +33,15 @@ for t in df["joined_1_2"]:
 # For training, I will only keep terms that appear at least 20 times.
 minSize = 20
 terms_blacklist = set([k for k in terms.keys() if terms[k] < minSize])
-terms_keep = sorted([k for k in terms.keys() if terms[k] >= minSize])
+terms_blacklist = terms_blacklist.union(set([k for k in terms.keys() if "Host@@@" in k])) # decided to filter out "Host" category due to its ambiguity
+terms_keep = set(terms.keys()) - terms_blacklist
 
 # will need terms_keep later in order to decipher the model's y_pred output
+# For now, create the output dir in the current directory
+import os
+output_folder = "models"
+os.makedirs(output_folder, exist_ok=True)
+
 joblib.dump(terms_keep, 'models/y_colnames.joblib')
 
 # Filter out infrequent terms from the joined_1_2 column
@@ -44,7 +52,7 @@ df["joined_1_2"] = [
 
 # Some rows may now have empty lists after removing terms that are too rare, so remove these rows
 df = df[df["joined_1_2"].str.len() > 0] # even though the items are lists, pandas's str.len() function can get list lengths
-print(f"Length of df after removing extremely rare terms: {len(df)}") # 43283; compared to 43314, didn't remove too much
+print(f"Length of df after removing extremely rare terms (as well as records with only Host category): {len(df)}") # 43283; compared to 43314, didn't remove too much
 
 # Convert the response column, joined_1_2, into binary yes/no columns, one per label
 y = pd.DataFrame()
@@ -56,15 +64,31 @@ for label in terms_keep:
 # To make the predictor columns (the features), vectorize the isolation source text data
 # https://www.geeksforgeeks.org/nlp/text-classification-using-scikit-learn-in-nlp/
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction import text
+
+# add bacteria names as stopwords
+with open("/home/kcw2/metadata-magnet/scripts/modeling/bacteria_stopwords.txt", "r", errors="ignore") as file:
+   bacteria_str = file.read()
+bacteria = set([s.lower() for s in bacteria_str.split() if not s.isnumeric()]) # separate genus and species names; split by any whitespace
+bacteria.remove("(commensal)")
+
+custom_stopwords = list(text.ENGLISH_STOP_WORDS.union(bacteria))
+
 # Initialize TF-IDF Vectorizer
-vectorizer = TfidfVectorizer(stop_words='english', max_df=0.7) # first-pass "feature selection"; remove words that appear in >70% of the records since they're not helpful
+vectorizer = TfidfVectorizer(stop_words=custom_stopwords, max_df=0.7) # first-pass "feature selection"; remove words that appear in >70% of the records since they're not helpful
 # I could use min_df but opted not to, as many groups are very small and this might remove legitimate information
 
 # Transform the text data to feature vectors
 # first, convert the ### delimiter in the isolation source strings into spaces so that the words on either side of the delimiter will be processed properly
 # also remove the <I> and </I> for italicization
 iso_source = [
-    row["Isolation source"].replace("###", " ").replace("<I>", "").replace("</I>", "")
+    row["Isolation source"].replace("###", " ")
+        .replace("<I>", "").replace("</I>", "")
+        .replace("<i>", "").replace("</i>", "")
+        .replace("-", " ")
+        .replace("(", "").replace(")", "")
+        .replace('"', '')
+        .lower()
     for _, row in df.iterrows()
 ]
 X = vectorizer.fit_transform(iso_source)
@@ -167,17 +191,27 @@ def eda():
     results['hybrid6000'] = evaluate_features(X_train_hybrid2, X_test_hybrid2, y_train, y_test, 'Hybrid: chi2_k=6000') # Hybrid: chi2_k=6000 - Macro F1: 0.5492, Avg Jaccard: 0.8069
     results['hybrid8000'] = evaluate_features(X_train_hybrid3, X_test_hybrid3, y_train, y_test, 'Hybrid: chi2_k=8000') # Hybrid: chi2_k=8000 - Macro F1: 0.5509, Avg Jaccard: 0.8090
 
-# Since the difference between the trials is small (using Jaccard index as the main scoring criteria), I will just go with chi2_k=4000
+# # Since the difference between the trials is small (using Jaccard index as the main scoring criteria), I will just go with chi2_k=4000
+# selected_indices_hybrid = hybrid_feature_selection(
+#    X_train, y_train, chi2_k=4000, rf_k=2000
+# )
+# X_train_hybrid = X_train[:, selected_indices_hybrid]
+# X_test_hybrid = X_test[:, selected_indices_hybrid]
+# # These dataframes contain the top 2000 features.
+# # >>> X_train_hybrid.shape  
+# # (34626, 2000)
+# # >>> X_test_hybrid.shape 
+# # (8657, 2000)
+
+# minimally disruptive (in terms of pipeline) way to skip feature selection: just select all indices...
 selected_indices_hybrid = hybrid_feature_selection(
-    X_train, y_train, chi2_k=4000, rf_k=2000
+   X_train, y_train, chi2_k=X_train.shape[1], rf_k=X_train.shape[1]
 )
 X_train_hybrid = X_train[:, selected_indices_hybrid]
 X_test_hybrid = X_test[:, selected_indices_hybrid]
-# These dataframes contain the top 2000 features.
-# >>> X_train_hybrid.shape  
-# (34626, 2000)
-# >>> X_test_hybrid.shape 
-# (8657, 2000)
+
+X_train_hybrid.shape 
+X_test_hybrid.shape 
 
 # Also need this later when predicting upon new data
 joblib.dump(selected_indices_hybrid, 'models/feature_selection_indices.joblib')
@@ -197,7 +231,7 @@ from sklearn.multioutput import MultiOutputClassifier
 from sklearn.ensemble import RandomForestClassifier, StackingClassifier
 from sklearn.linear_model import LogisticRegression, Lasso
 from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.metrics import f1_score, jaccard_score, accuracy_score
+from sklearn.metrics import f1_score, jaccard_score, accuracy_score, precision_score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.base import clone
 import warnings
@@ -261,6 +295,7 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
         'model': None,
         'f1': None,
         'accuracy': None,
+        'precision': None,
         'params': None
     }
     
@@ -390,6 +425,8 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
                 model, X_train, y_train,
                 cv=cv,
                 scoring=jaccard_scorer,
+                # scoring='f1_macro', # need to specify macro because this is multi-label classification
+                #scoring='precision_macro', # need to specify macro because this is multi-label classification
                 n_jobs=-1,
                 error_score='raise'
             )
@@ -478,12 +515,14 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
         f1 = f1_score(y_test, y_pred, average='macro', zero_division=0)
         jaccard = jaccard_score(y_test, y_pred, average='samples', zero_division=0)
         accuracy = accuracy_score(y_test, y_pred)
+        precision = precision_score(y_test, y_pred, average='macro', zero_division=0)
         
         scores = {
             'cv_score': best_score,
             'test_f1': f1,
             'test_jaccard': jaccard,
-            'test_accuracy': accuracy
+            'test_accuracy': accuracy,
+            'test_precision': precision
         }
         
         # Store results (but not the model itself to save memory)
@@ -501,21 +540,23 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
                 base_models.append((model_name, best_model))
         
         # Update best overall if this model is better
-        if jaccard > best_overall['jaccard']:
+        if jaccard > best_overall['jaccard']: # TODO: this line might be the reason the non-Jaccard models behaved strangely
             best_overall['jaccard'] = jaccard
             best_overall['model_name'] = model_name
             best_overall['model'] = best_model
             best_overall['f1'] = f1
             best_overall['accuracy'] = accuracy
+            best_overall['precision'] = precision
             best_overall['params'] = best_params
             best_overall['cv_score'] = best_score
         
         # Print results immediately
         logger.info(f"\n{model_name.upper()} Results:")
-        logger.info(f"  Best CV Jaccard: {best_score:.4f}")
+        logger.info(f"  Best CV score: {best_score:.4f}")
         logger.info(f"  Test F1 (macro): {f1:.4f}")
         logger.info(f"  Test Jaccard: {jaccard:.4f}")
         logger.info(f"  Test Accuracy: {accuracy:.4f}")
+        logger.info(f"  Test Precision: {precision:.4f}")
         logger.info(f"  Tuning time: {tuning_time:.2f} seconds")
         logger.info(f"  Best params: {best_params}")
         
@@ -524,10 +565,11 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
             f.write(f"\n{model_name.upper()} Best Parameters:\n")
             for key, value in best_params.items():
                 f.write(f"  {key}: {value}\n")
-            f.write(f"CV Jaccard: {best_score:.4f}\n")
+            f.write(f"CV score: {best_score:.4f}\n")
             f.write(f"Test F1: {f1:.4f}\n")
             f.write(f"Test Jaccard: {jaccard:.4f}\n")
             f.write(f"Test Accuracy: {accuracy:.4f}\n")
+            f.write(f"Test Precision: {precision:.4f}\n")
             f.write("-"*40 + "\n")
     
     # # Now optimize Stacking classifier
@@ -707,7 +749,8 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
             'cv_score': best_overall.get('cv_score', 0),
             'test_f1': best_overall['f1'],
             'test_jaccard': best_overall['jaccard'],
-            'test_accuracy': best_overall['accuracy']
+            'test_accuracy': best_overall['accuracy'],
+            'test_precision': best_overall['precision']
         },
         save_dir
     )
@@ -732,6 +775,7 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
         logger.info(f"  Test F1 (macro): {scores['test_f1']:.4f}")
         logger.info(f"  Test Jaccard: {scores['test_jaccard']:.4f}")
         logger.info(f"  Test Accuracy: {scores['test_accuracy']:.4f}")
+        logger.info(f"  Test Precision: {scores['test_precision']:.4f}")
         logger.info(f"  CV Jaccard: {scores['cv_score']:.4f}")
         logger.info(f"  Tuning time: {tuning_time:.2f}s")
         logger.info(f"  Best params: {params}")
@@ -742,6 +786,7 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
     logger.info(f"  Test F1 (macro): {best_overall['f1']:.4f}")
     logger.info(f"  Test Jaccard: {best_overall['jaccard']:.4f}")
     logger.info(f"  Test Accuracy: {best_overall['accuracy']:.4f}")
+    logger.info(f"  Test Precision: {best_overall['precision']:.4f}")
     logger.info(f"  CV Jaccard: {best_overall.get('cv_score', 0):.4f}")
     logger.info(f"  Saved to: {model_path}")
     logger.info("="*80)
@@ -807,6 +852,9 @@ def load_best_model(save_dir='models'):
 #     y_pred = model.predict(X_test)
 
 # Usage: run on the feature-selected data
+#results = build_and_tune_models(X_train_hybrid, y_train, X_test_hybrid, y_test, n_trials=30) # for the real thing: use the feature-selected X
+
+# this time try it without performing feature selection
 results = build_and_tune_models(X_train_hybrid, y_train, X_test_hybrid, y_test, n_trials=30) # for the real thing: use the feature-selected X
 
 # # TODO start: to test out the following code I will subsample rows from the training dataset, but for the real thing I will need to comment out the following code.
