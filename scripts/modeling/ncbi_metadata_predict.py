@@ -43,7 +43,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 vectorizer = joblib.load('models/tfidf_vectorizer.joblib') # assumes you're currently at /home/kcw2/data/testing/bacdive_model/
 selected_indices = joblib.load('models/feature_selection_indices.joblib')
-y_colnames = list(joblib.load('models/y_colnames.joblib'))
+y_colnames = list(joblib.load('models/y_colnames.joblib')) # keeping the list typecast to maintain compatibility with bugged outputs which produced sets instead, but it should already be a list
 
 # Transform new data using the SAME vectorizer (NOT fit_transform!)
 X = vectorizer.transform(df["joined_string"]) # X.shape returns (29, 12781)

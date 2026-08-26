@@ -33,8 +33,8 @@ for t in df["joined_1_2"]:
 # For training, I will only keep terms that appear at least 20 times.
 minSize = 20
 terms_blacklist = set([k for k in terms.keys() if terms[k] < minSize])
-terms_blacklist = terms_blacklist.union(set([k for k in terms.keys() if "Host@@@" in k])) # decided to filter out "Host" category due to its ambiguity
-terms_keep = set(terms.keys()) - terms_blacklist
+# terms_blacklist = terms_blacklist.union(set([k for k in terms.keys() if "Host@@@" in k])) # decided to filter out "Host" category due to its ambiguity
+terms_keep = sorted(list(set(terms.keys()) - terms_blacklist)) # Fixing a major bug- if this is a set, it's impossible to actually reconstitute the predicted terms from the prediction columns
 
 # will need terms_keep later in order to decipher the model's y_pred output
 # For now, create the output dir in the current directory
@@ -52,7 +52,7 @@ df["joined_1_2"] = [
 
 # Some rows may now have empty lists after removing terms that are too rare, so remove these rows
 df = df[df["joined_1_2"].str.len() > 0] # even though the items are lists, pandas's str.len() function can get list lengths
-print(f"Length of df after removing extremely rare terms (as well as records with only Host category): {len(df)}") # 43283; compared to 43314, didn't remove too much
+print(f"Length of df after removing extremely rare terms: {len(df)}") # 43283; compared to 43314, didn't remove too much
 
 # Convert the response column, joined_1_2, into binary yes/no columns, one per label
 y = pd.DataFrame()
@@ -75,8 +75,10 @@ bacteria.remove("(commensal)")
 custom_stopwords = list(text.ENGLISH_STOP_WORDS.union(bacteria))
 
 # Initialize TF-IDF Vectorizer
-vectorizer = TfidfVectorizer(stop_words=custom_stopwords, max_df=0.7) # first-pass "feature selection"; remove words that appear in >70% of the records since they're not helpful
+# vectorizer = TfidfVectorizer(stop_words=custom_stopwords, max_df=0.7) # first-pass "feature selection"; remove words that appear in >70% of the records since they're not helpful
 # I could use min_df but opted not to, as many groups are very small and this might remove legitimate information
+
+vectorizer = TfidfVectorizer(stop_words='english', max_df=0.7)
 
 # Transform the text data to feature vectors
 # first, convert the ### delimiter in the isolation source strings into spaces so that the words on either side of the delimiter will be processed properly
