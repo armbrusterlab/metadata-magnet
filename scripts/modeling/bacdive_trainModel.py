@@ -33,8 +33,9 @@ for t in df["joined_1_2"]:
 # For training, I will only keep terms that appear at least 20 times.
 minSize = 20
 terms_blacklist = set([k for k in terms.keys() if terms[k] < minSize])
-# terms_blacklist = terms_blacklist.union(set([k for k in terms.keys() if "Host@@@" in k])) # decided to filter out "Host" category due to its ambiguity
-terms_keep = sorted(list(set(terms.keys()) - terms_blacklist)) # Fixing a major bug- if this is a set, it's impossible to actually reconstitute the predicted terms from the prediction columns
+terms_blacklist = terms_blacklist.union(set([k for k in terms.keys() if "Host@@@" in k])) # decided to filter out "Host" category due to its ambiguity
+terms_blacklist.discard("Infection@@@Patient") # this term in particular seems to be ambiguous and difficult to categorize
+terms_keep = sorted(list(set(terms.keys()) - terms_blacklist)) # Fixing a MAJOR bug- if this is a set, it's impossible to actually reconstitute the predicted terms from the prediction columns
 
 # will need terms_keep later in order to decipher the model's y_pred output
 # For now, create the output dir in the current directory
@@ -67,18 +68,34 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction import text
 
 # add bacteria names as stopwords
+# Bacteria name list obtained from https://app.gideononline.com/az/pathogens/bacteria
 with open("/home/kcw2/metadata-magnet/scripts/modeling/bacteria_stopwords.txt", "r", errors="ignore") as file:
    bacteria_str = file.read()
 bacteria = set([s.lower() for s in bacteria_str.split() if not s.isnumeric()]) # separate genus and species names; split by any whitespace
 bacteria.remove("(commensal)")
 
-custom_stopwords = list(text.ENGLISH_STOP_WORDS.union(bacteria))
+# add country names as stopwords
+# country list obtained from https://gist.github.com/dariusz-wozniak/656f2f9070b4205c5009716f05c94067
+with open("/home/kcw2/metadata-magnet/scripts/modeling/country_stopwords.txt", "r", errors="ignore") as file:
+   country_str = file.read()
+countries = set([s.lower() for s in country_str.split() if not s.isnumeric()]) # separate genus and species names; split by any whitespace
+countries.remove("&")
+countries.remove("island")
+countries.remove("islands")
+countries.remove("ocean")
+countries.remove("city")
+countries.remove("sandwich")
+
+# add integers as stopwords
+integer_stopwords = set([str(i) for i in range(100)]) # manual inspection of selected features suggests that 2 digits are enough
+
+custom_stopwords = list(text.ENGLISH_STOP_WORDS.union(bacteria).union(countries).union(integer_stopwords))
 
 # Initialize TF-IDF Vectorizer
-# vectorizer = TfidfVectorizer(stop_words=custom_stopwords, max_df=0.7) # first-pass "feature selection"; remove words that appear in >70% of the records since they're not helpful
+vectorizer = TfidfVectorizer(stop_words=custom_stopwords, max_df=0.7) # first-pass "feature selection"; remove words that appear in >70% of the records since they're not helpful
 # I could use min_df but opted not to, as many groups are very small and this might remove legitimate information
 
-vectorizer = TfidfVectorizer(stop_words='english', max_df=0.7)
+# vectorizer = TfidfVectorizer(stop_words='english', max_df=0.7)
 
 # Transform the text data to feature vectors
 # first, convert the ### delimiter in the isolation source strings into spaces so that the words on either side of the delimiter will be processed properly
@@ -193,24 +210,26 @@ def eda():
     results['hybrid6000'] = evaluate_features(X_train_hybrid2, X_test_hybrid2, y_train, y_test, 'Hybrid: chi2_k=6000') # Hybrid: chi2_k=6000 - Macro F1: 0.5492, Avg Jaccard: 0.8069
     results['hybrid8000'] = evaluate_features(X_train_hybrid3, X_test_hybrid3, y_train, y_test, 'Hybrid: chi2_k=8000') # Hybrid: chi2_k=8000 - Macro F1: 0.5509, Avg Jaccard: 0.8090
 
-# # Since the difference between the trials is small (using Jaccard index as the main scoring criteria), I will just go with chi2_k=4000
-# selected_indices_hybrid = hybrid_feature_selection(
-#    X_train, y_train, chi2_k=4000, rf_k=2000
-# )
-# X_train_hybrid = X_train[:, selected_indices_hybrid]
-# X_test_hybrid = X_test[:, selected_indices_hybrid]
-# # These dataframes contain the top 2000 features.
-# # >>> X_train_hybrid.shape  
-# # (34626, 2000)
-# # >>> X_test_hybrid.shape 
-# # (8657, 2000)
-
-# minimally disruptive (in terms of pipeline) way to skip feature selection: just select all indices...
+# Since the difference between the trials is small (using Jaccard index as the main scoring criteria), I will just go with chi2_k=4000
+chi2_k = 4000 # X_train.shape[1]
+rf_k = 2000 # X_train.shape[1] #1000
 selected_indices_hybrid = hybrid_feature_selection(
-   X_train, y_train, chi2_k=X_train.shape[1], rf_k=X_train.shape[1]
+   X_train, y_train, chi2_k=chi2_k, rf_k=rf_k
 )
 X_train_hybrid = X_train[:, selected_indices_hybrid]
 X_test_hybrid = X_test[:, selected_indices_hybrid]
+# These dataframes contain the top 2000 features (or more generally speaking, rf_k number of features).
+# >>> X_train_hybrid.shape  
+# (34626, 2000)
+# >>> X_test_hybrid.shape 
+# (8657, 2000)
+
+# # minimally disruptive (in terms of pipeline) way to skip feature selection: just select all indices...
+# selected_indices_hybrid = hybrid_feature_selection(
+#    X_train, y_train, chi2_k=X_train.shape[1], rf_k=X_train.shape[1]
+# )
+# X_train_hybrid = X_train[:, selected_indices_hybrid]
+# X_test_hybrid = X_test[:, selected_indices_hybrid]
 
 X_train_hybrid.shape 
 X_test_hybrid.shape 
@@ -290,16 +309,16 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
         y_pred = estimator.predict(X)
         return jaccard_score(y, y_pred, average='samples', zero_division=0)
     
-    # Dictionary to store the best model overall
-    best_overall = {
-        'model_name': None, 
-        'jaccard': -1, 
-        'model': None,
-        'f1': None,
-        'accuracy': None,
-        'precision': None,
-        'params': None
-    }
+    # # Dictionary to store the best model overall
+    # best_overall = {
+    #     'model_name': None, 
+    #     'jaccard': -1, 
+    #     'model': None,
+    #     'f1': None,
+    #     'accuracy': None,
+    #     'precision': None,
+    #     'params': None
+    # }
     
     # Define parameter distributions for each model
     param_distributions = {
@@ -426,7 +445,8 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
             scores = cross_val_score(
                 model, X_train, y_train,
                 cv=cv,
-                scoring=jaccard_scorer,
+                # scoring=jaccard_scorer,
+                scoring='jaccard_weighted',
                 # scoring='f1_macro', # need to specify macro because this is multi-label classification
                 #scoring='precision_macro', # need to specify macro because this is multi-label classification
                 n_jobs=-1,
@@ -541,16 +561,16 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
             else:
                 base_models.append((model_name, best_model))
         
-        # Update best overall if this model is better
-        if jaccard > best_overall['jaccard']: # TODO: this line might be the reason the non-Jaccard models behaved strangely
-            best_overall['jaccard'] = jaccard
-            best_overall['model_name'] = model_name
-            best_overall['model'] = best_model
-            best_overall['f1'] = f1
-            best_overall['accuracy'] = accuracy
-            best_overall['precision'] = precision
-            best_overall['params'] = best_params
-            best_overall['cv_score'] = best_score
+        # # Update best overall if this model is better
+        # if jaccard > best_overall['jaccard']: # TODO: this line might be the reason the non-Jaccard models behaved strangely
+        #     best_overall['jaccard'] = jaccard
+        #     best_overall['model_name'] = model_name
+        #     best_overall['model'] = best_model
+        #     best_overall['f1'] = f1
+        #     best_overall['accuracy'] = accuracy
+        #     best_overall['precision'] = precision
+        #     best_overall['params'] = best_params
+        #     best_overall['cv_score'] = best_score
         
         # Print results immediately
         logger.info(f"\n{model_name.upper()} Results:")
@@ -738,29 +758,29 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
     #     f.write(f"Test Accuracy: {accuracy_stack:.4f}\n")
     #     f.write("="*40 + "\n")
     
-    # Save the best performing model
-    logger.info(f"\n{'='*60}")
-    logger.info("Saving Best Performing Model")
-    logger.info(f"{'='*60}")
+    # # Save the best performing model
+    # logger.info(f"\n{'='*60}")
+    # logger.info("Saving Best Performing Model")
+    # logger.info(f"{'='*60}")
     
-    model_path, metadata_path = save_best_model(
-        best_overall['model'],
-        best_overall['model_name'],
-        best_overall['params'],
-        {
-            'cv_score': best_overall.get('cv_score', 0),
-            'test_f1': best_overall['f1'],
-            'test_jaccard': best_overall['jaccard'],
-            'test_accuracy': best_overall['accuracy'],
-            'test_precision': best_overall['precision']
-        },
-        save_dir
-    )
+    # model_path, metadata_path = save_best_model(
+    #     best_overall['model'],
+    #     best_overall['model_name'],
+    #     best_overall['params'],
+    #     {
+    #         'cv_score': best_overall.get('cv_score', 0),
+    #         'test_f1': best_overall['f1'],
+    #         'test_jaccard': best_overall['jaccard'],
+    #         'test_accuracy': best_overall['accuracy'],
+    #         'test_precision': best_overall['precision']
+    #     },
+    #     save_dir
+    # )
     
-    # Update results with best overall
-    results['best_overall'] = best_overall
-    results['best_overall']['saved_path'] = model_path
-    results['best_overall']['saved_metadata_path'] = metadata_path
+    # # Update results with best overall
+    # results['best_overall'] = best_overall
+    # results['best_overall']['saved_path'] = model_path
+    # results['best_overall']['saved_metadata_path'] = metadata_path
     
     # Final summary
     logger.info("\n" + "="*80)
@@ -782,16 +802,16 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
         logger.info(f"  Tuning time: {tuning_time:.2f}s")
         logger.info(f"  Best params: {params}")
     
-    # Best overall model
-    logger.info("\n" + "="*80)
-    logger.info(f"🏆 BEST OVERALL MODEL: {best_overall['model_name'].upper()}")
-    logger.info(f"  Test F1 (macro): {best_overall['f1']:.4f}")
-    logger.info(f"  Test Jaccard: {best_overall['jaccard']:.4f}")
-    logger.info(f"  Test Accuracy: {best_overall['accuracy']:.4f}")
-    logger.info(f"  Test Precision: {best_overall['precision']:.4f}")
-    logger.info(f"  CV Jaccard: {best_overall.get('cv_score', 0):.4f}")
-    logger.info(f"  Saved to: {model_path}")
-    logger.info("="*80)
+    # # Best overall model
+    # logger.info("\n" + "="*80)
+    # logger.info(f"🏆 BEST OVERALL MODEL: {best_overall['model_name'].upper()}")
+    # logger.info(f"  Test F1 (macro): {best_overall['f1']:.4f}")
+    # logger.info(f"  Test Jaccard: {best_overall['jaccard']:.4f}")
+    # logger.info(f"  Test Accuracy: {best_overall['accuracy']:.4f}")
+    # logger.info(f"  Test Precision: {best_overall['precision']:.4f}")
+    # logger.info(f"  CV Jaccard: {best_overall.get('cv_score', 0):.4f}")
+    # logger.info(f"  Saved to: {model_path}")
+    # logger.info("="*80)
     
     # Save results summary to file
     summary_path = os.path.join(save_dir, "tuning_summary.pkl")
