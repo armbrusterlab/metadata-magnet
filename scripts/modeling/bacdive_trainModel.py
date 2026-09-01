@@ -34,7 +34,7 @@ for t in df["joined_1_2"]:
 minSize = 20
 terms_blacklist = set([k for k in terms.keys() if terms[k] < minSize])
 terms_blacklist = terms_blacklist.union(set([k for k in terms.keys() if "Host@@@" in k])) # decided to filter out "Host" category due to its ambiguity
-terms_blacklist.discard("Infection@@@Patient") # this term in particular seems to be ambiguous and difficult to categorize
+terms_blacklist.add("Infection@@@Patient") # this term in particular seems to be ambiguous and difficult to categorize
 terms_keep = sorted(list(set(terms.keys()) - terms_blacklist)) # Fixing a MAJOR bug- if this is a set, it's impossible to actually reconstitute the predicted terms from the prediction columns
 
 # will need terms_keep later in order to decipher the model's y_pred output
@@ -85,6 +85,12 @@ countries.remove("islands")
 countries.remove("ocean")
 countries.remove("city")
 countries.remove("sandwich")
+
+# add other stopwords
+countries.add("collected") # the phrase "not collected" was being marked with a variety of categories for some reason
+countries.update(["missing", "unknown", "metagenome", "not", "provided"]) # these words don't seem to cause issues, but they commonly occur and are uninformative, so I'll add them in case
+countries.update("metagenomes available from the Sequence Read Archive".lower().split()) # this has the potential to be problematic too
+countries.add("sterile") # the models associate this with laboratory, but it might refer to a sterile body site, so it's not informative
 
 # add integers as stopwords
 integer_stopwords = set([str(i) for i in range(100)]) # manual inspection of selected features suggests that 2 digits are enough
@@ -446,9 +452,12 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
                 model, X_train, y_train,
                 cv=cv,
                 # scoring=jaccard_scorer,
-                scoring='jaccard_weighted',
-                # scoring='f1_macro', # need to specify macro because this is multi-label classification
-                #scoring='precision_macro', # need to specify macro because this is multi-label classification
+                # scoring='jaccard_weighted',
+                scoring='jaccard_macro',
+                # scoring='f1_macro',
+                # scoring='f1_weighted',
+                # scoring='precision_macro',
+                # scoring='precision_weighted',
                 n_jobs=-1,
                 error_score='raise'
             )
