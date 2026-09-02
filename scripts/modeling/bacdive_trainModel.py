@@ -315,17 +315,6 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
         y_pred = estimator.predict(X)
         return jaccard_score(y, y_pred, average='samples', zero_division=0)
     
-    # # Dictionary to store the best model overall
-    # best_overall = {
-    #     'model_name': None, 
-    #     'jaccard': -1, 
-    #     'model': None,
-    #     'f1': None,
-    #     'accuracy': None,
-    #     'precision': None,
-    #     'params': None
-    # }
-    
     # Define parameter distributions for each model
     param_distributions = {
         'random_forest': {
@@ -356,13 +345,7 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
             'estimator__solver': optuna.distributions.CategoricalDistribution(['lbfgs', 'liblinear', 'saga']),
             'estimator__max_iter': optuna.distributions.CategoricalDistribution([100, 1000, 2500]),
             'estimator__random_state': optuna.distributions.CategoricalDistribution([42])
-        }#,
-        # 'stacking': {
-        #     'final_estimator__C': optuna.distributions.FloatDistribution(0.1, 10.0),
-        #     'final_estimator__penalty': optuna.distributions.CategoricalDistribution(['l1', 'l2']),
-        #     'final_estimator__solver': optuna.distributions.CategoricalDistribution(['liblinear']),
-        #     'final_estimator__max_iter': optuna.distributions.CategoricalDistribution([1000])
-        # }
+        }
     }
     
     # Define model creation functions
@@ -400,33 +383,46 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
         return MultiOutputClassifier(lr, n_jobs=-1)
     
     def create_logistic_regression(params):
-        lr = LogisticRegression(
-            penalty=params['estimator__penalty'],
-            C=params['estimator__C'],
-            solver=params['estimator__solver'],
-            max_iter=params['estimator__max_iter'],
-            random_state=42
-        )
-        return MultiOutputClassifier(lr, n_jobs=-1)
-    
-    # def create_stacking(params, base_models):
-    #     """Create stacking classifier with pre-trained base models."""
-    #     meta_lr = LogisticRegression(
-    #         C=params['final_estimator__C'],
-    #         penalty=params['final_estimator__penalty'],
-    #         solver=params['final_estimator__solver'],
-    #         max_iter=params['final_estimator__max_iter'],
-    #         random_state=42
-    #     )
+        """Create logistic regression model with parameter validation."""
         
-    #     stack = StackingClassifier(
-    #         estimators=base_models,
-    #         final_estimator=meta_lr,
-    #         cv=5,
-    #         stack_method='predict_proba',
-    #         n_jobs=-1
-    #     )
-    #     return stack
+        # Get the penalty
+        penalty = params.get('estimator__penalty')
+        solver = params.get('estimator__solver')
+        
+        # Validate and fix parameter combinations
+        if penalty == 'elasticnet':
+            # elasticnet only works with saga
+            solver = 'saga'
+            # Must have l1_ratio for elasticnet
+            if 'estimator__l1_ratio' not in params:
+                params['estimator__l1_ratio'] = 0.5
+        elif penalty == 'l1':
+            # l1 works with liblinear or saga
+            if solver not in ['liblinear', 'saga']:
+                solver = 'liblinear'  # default to liblinear
+        elif penalty == 'l2':
+            # l2 works with most solvers
+            if solver not in ['lbfgs', 'liblinear', 'saga']:
+                solver = 'lbfgs'  # default to lbfgs
+        else:  # penalty == None
+            # None penalty works with lbfgs or saga (not liblinear)
+            if solver not in ['lbfgs', 'saga']:
+                solver = 'lbfgs'  # default to lbfgs
+        
+        # Build the model parameters
+        lr_params = {
+            'penalty': penalty,
+            'C': params.get('estimator__C', 1.0),
+            'solver': solver,
+            'max_iter': params.get('estimator__max_iter', 1000),
+            'random_state': 42
+        }
+        
+        # Add l1_ratio if using elasticnet
+        if penalty == 'elasticnet':
+            lr_params['l1_ratio'] = params.get('estimator__l1_ratio', 0.5)
+        
+        return MultiOutputClassifier(LogisticRegression(**lr_params), n_jobs=-1)
     
     def objective(trial, model_name, create_model_func, param_dist):
         """Objective function for Optuna optimization."""
@@ -453,10 +449,10 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
                 cv=cv,
                 # scoring=jaccard_scorer,
                 # scoring='jaccard_weighted',
-                scoring='jaccard_macro',
+                # scoring='jaccard_macro',
                 # scoring='f1_macro',
                 # scoring='f1_weighted',
-                # scoring='precision_macro',
+                scoring='precision_macro',
                 # scoring='precision_weighted',
                 n_jobs=-1,
                 error_score='raise'
@@ -468,39 +464,16 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
             logger.warning(f"Trial failed: {str(e)}")
             return -1.0
     
-    def save_best_model(model, model_name, params, scores, save_dir):
-        """Save the best performing model to disk."""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
-        # Save the best model
-        model_path = os.path.join(save_dir, "best_model.joblib")
-        joblib.dump(model, model_path, compress=3)
-        
-        # Save metadata
-        metadata = {
-            'model_name': model_name,
-            'timestamp': timestamp,
-            'parameters': params,
-            'scores': scores,
-            'feature_count': X_train.shape[1],
-            'label_count': y_train.shape[1],
-            'training_date': datetime.now().isoformat()
-        }
-        
-        metadata_path = os.path.join(save_dir, "best_model_metadata.pkl")
-        with open(metadata_path, 'wb') as f:
-            pickle.dump(metadata, f)
-        
-        logger.info(f"\n✅ Best model saved to: {model_path}")
-        logger.info(f"✅ Metadata saved to: {metadata_path}")
-        
-        return model_path, metadata_path
-    
     # Optimize each model type
+    # model_configs = [
+    #     ('random_forest', create_random_forest, param_distributions['random_forest']),
+    #     ('gradient_boosting', create_gradient_boosting, param_distributions['gradient_boosting']),
+    #     ('lasso', create_lasso, param_distributions['lasso']),
+    #     ('logistic_regression', create_logistic_regression, param_distributions['logistic_regression'])
+    # ]
+
+    # version that only runs trials for logistic regression
     model_configs = [
-        ('random_forest', create_random_forest, param_distributions['random_forest']),
-        ('gradient_boosting', create_gradient_boosting, param_distributions['gradient_boosting']),
-        ('lasso', create_lasso, param_distributions['lasso']),
         ('logistic_regression', create_logistic_regression, param_distributions['logistic_regression'])
     ]
     
@@ -570,17 +543,6 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
             else:
                 base_models.append((model_name, best_model))
         
-        # # Update best overall if this model is better
-        # if jaccard > best_overall['jaccard']: # TODO: this line might be the reason the non-Jaccard models behaved strangely
-        #     best_overall['jaccard'] = jaccard
-        #     best_overall['model_name'] = model_name
-        #     best_overall['model'] = best_model
-        #     best_overall['f1'] = f1
-        #     best_overall['accuracy'] = accuracy
-        #     best_overall['precision'] = precision
-        #     best_overall['params'] = best_params
-        #     best_overall['cv_score'] = best_score
-        
         # Print results immediately
         logger.info(f"\n{model_name.upper()} Results:")
         logger.info(f"  Best CV score: {best_score:.4f}")
@@ -602,195 +564,7 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
             f.write(f"Test Accuracy: {accuracy:.4f}\n")
             f.write(f"Test Precision: {precision:.4f}\n")
             f.write("-"*40 + "\n")
-    
-    # # Now optimize Stacking classifier
-    # logger.info(f"\n{'='*60}")
-    # logger.info("Optimizing STACKING CLASSIFIER")
-    # logger.info(f"{'='*60}")
-    
-    # # Retrain best base models if they are MultiOutputClassifier
-    # stacking_base_models = []
-    # for name, model in results['models'].items():
-    #     if name != 'lasso' and model is not None:
-    #         if isinstance(model, MultiOutputClassifier):
-    #             stacking_base_models.append((name, clone(model.estimator)))
-    #         else:
-    #             stacking_base_models.append((name, clone(model)))
-    
-    # # Optimize stacking
-    # start_time = time.time()
-    
-    # def stacking_objective(trial):
-    #     """Objective function for stacking optimization."""
-    #     params = {}
-    #     for param_name, dist in param_distributions['stacking'].items():
-    #         if isinstance(dist, optuna.distributions.CategoricalDistribution):
-    #             params[param_name] = trial.suggest_categorical(param_name, dist.choices)
-    #         elif isinstance(dist, optuna.distributions.IntDistribution):
-    #             params[param_name] = trial.suggest_int(param_name, dist.low, dist.high)
-    #         elif isinstance(dist, optuna.distributions.FloatDistribution):
-    #             params[param_name] = trial.suggest_float(param_name, dist.low, dist.high, log=dist.log)
-        
-    #     try:
-    #         # Create stacking model
-    #         meta_lr = LogisticRegression(
-    #             C=params['final_estimator__C'],
-    #             penalty=params['final_estimator__penalty'],
-    #             solver=params['final_estimator__solver'],
-    #             max_iter=params['final_estimator__max_iter'],
-    #             random_state=42
-    #         )
-            
-    #         # Ensure base models are cloned
-    #         base_clones = []
-    #         for name, estimator in stacking_base_models:
-    #             base_clones.append((name, clone(estimator)))
-            
-    #         stack = StackingClassifier(
-    #             estimators=base_clones,
-    #             final_estimator=meta_lr,
-    #             cv=5,
-    #             stack_method='predict_proba',
-    #             n_jobs=-1
-    #         )
-            
-    #         # Cross-validation for stacking
-    #         cv = KFold(n_splits=5, shuffle=True, random_state=42)
-    #         scores = []
-    #         for train_idx, val_idx in cv.split(X_train):
-    #             X_train_fold, X_val_fold = X_train[train_idx], X_train[val_idx]
-    #             y_train_fold, y_val_fold = y_train[train_idx], y_train[val_idx]
-                
-    #             # Fit stacking on fold
-    #             stack_clone = clone(stack)
-    #             stack_clone.fit(X_train_fold, y_train_fold)
-    #             y_pred_fold = stack_clone.predict(X_val_fold)
-    #             score = jaccard_score(y_val_fold, y_pred_fold, average='samples', zero_division=0)
-    #             scores.append(score)
-            
-    #         return np.mean(scores)
-            
-    #     except Exception as e:
-    #         logger.warning(f"Stacking trial failed: {str(e)}")
-    #         return -1.0
-    
-    # stacking_study = optuna.create_study(
-    #     direction='maximize',
-    #     sampler=optuna.samplers.RandomSampler(seed=42)
-    # )
-    
-    # stacking_study.optimize(
-    #     stacking_objective,
-    #     n_trials=n_trials,
-    #     show_progress_bar=True
-    # )
-    
-    # tuning_time = time.time() - start_time
-    
-    # # Train best stacking model
-    # best_stack_params = stacking_study.best_params
-    # best_stack_score = stacking_study.best_value
-    
-    # logger.info(f"\nTraining best stacking model on full training data...")
-    
-    # # Create final stacking model with best params
-    # meta_lr = LogisticRegression(
-    #     C=best_stack_params['final_estimator__C'],
-    #     penalty=best_stack_params['final_estimator__penalty'],
-    #     solver=best_stack_params['final_estimator__solver'],
-    #     max_iter=best_stack_params['final_estimator__max_iter'],
-    #     random_state=42
-    # )
-    
-    # # Retrain base estimators on full data
-    # base_estimators_full = []
-    # for name, estimator in stacking_base_models:
-    #     base_estimators_full.append((name, clone(estimator)))
-    
-    # best_stacking = MultiOutputClassifier(
-    #     StackingClassifier(
-    #         estimators=base_estimators_full,
-    #         final_estimator=meta_lr,
-    #         cv=5,
-    #         stack_method='predict_proba',
-    #         n_jobs=-1
-    #     ),
-    #     n_jobs=-1
-    # )
-    # best_stacking.fit(X_train, y_train)
-    
-    # # Evaluate stacking
-    # y_pred_stack = best_stacking.predict(X_test)
-    # f1_stack = f1_score(y_test, y_pred_stack, average='macro', zero_division=0)
-    # jaccard_stack = jaccard_score(y_test, y_pred_stack, average='samples', zero_division=0)
-    # accuracy_stack = accuracy_score(y_test, y_pred_stack)
-    
-    # scores_stack = {
-    #     'cv_score': best_stack_score,
-    #     'test_f1': f1_stack,
-    #     'test_jaccard': jaccard_stack,
-    #     'test_accuracy': accuracy_stack
-    # }
-    
-    # # Store stacking results
-    # results['models']['stacking'] = best_stacking
-    # results['best_params']['stacking'] = best_stack_params
-    # results['best_scores']['stacking'] = scores_stack
-    # results['tuning_times']['stacking'] = tuning_time
-    
-    # # Update best overall if stacking is better
-    # if jaccard_stack > best_overall['jaccard']:
-    #     best_overall['jaccard'] = jaccard_stack
-    #     best_overall['model_name'] = 'stacking'
-    #     best_overall['model'] = best_stacking
-    #     best_overall['f1'] = f1_stack
-    #     best_overall['accuracy'] = accuracy_stack
-    #     best_overall['params'] = best_stack_params
-    #     best_overall['cv_score'] = best_stack_score
-    
-    # logger.info(f"\nSTACKING Results:")
-    # logger.info(f"  Best CV Jaccard: {best_stack_score:.4f}")
-    # logger.info(f"  Test F1 (macro): {f1_stack:.4f}")
-    # logger.info(f"  Test Jaccard: {jaccard_stack:.4f}")
-    # logger.info(f"  Test Accuracy: {accuracy_stack:.4f}")
-    # logger.info(f"  Tuning time: {tuning_time:.2f} seconds")
-    # logger.info(f"  Best params: {best_stack_params}")
-    
-    # # Save stacking results to log
-    # with open('bacdive_tuning.log', 'a') as f:
-    #     f.write(f"\nSTACKING Best Parameters:\n")
-    #     for key, value in best_stack_params.items():
-    #         f.write(f"  {key}: {value}\n")
-    #     f.write(f"CV Jaccard: {best_stack_score:.4f}\n")
-    #     f.write(f"Test F1: {f1_stack:.4f}\n")
-    #     f.write(f"Test Jaccard: {jaccard_stack:.4f}\n")
-    #     f.write(f"Test Accuracy: {accuracy_stack:.4f}\n")
-    #     f.write("="*40 + "\n")
-    
-    # # Save the best performing model
-    # logger.info(f"\n{'='*60}")
-    # logger.info("Saving Best Performing Model")
-    # logger.info(f"{'='*60}")
-    
-    # model_path, metadata_path = save_best_model(
-    #     best_overall['model'],
-    #     best_overall['model_name'],
-    #     best_overall['params'],
-    #     {
-    #         'cv_score': best_overall.get('cv_score', 0),
-    #         'test_f1': best_overall['f1'],
-    #         'test_jaccard': best_overall['jaccard'],
-    #         'test_accuracy': best_overall['accuracy'],
-    #         'test_precision': best_overall['precision']
-    #     },
-    #     save_dir
-    # )
-    
-    # # Update results with best overall
-    # results['best_overall'] = best_overall
-    # results['best_overall']['saved_path'] = model_path
-    # results['best_overall']['saved_metadata_path'] = metadata_path
-    
+
     # Final summary
     logger.info("\n" + "="*80)
     logger.info("FINAL SUMMARY - ALL MODELS")
@@ -811,17 +585,6 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
         logger.info(f"  Tuning time: {tuning_time:.2f}s")
         logger.info(f"  Best params: {params}")
     
-    # # Best overall model
-    # logger.info("\n" + "="*80)
-    # logger.info(f"🏆 BEST OVERALL MODEL: {best_overall['model_name'].upper()}")
-    # logger.info(f"  Test F1 (macro): {best_overall['f1']:.4f}")
-    # logger.info(f"  Test Jaccard: {best_overall['jaccard']:.4f}")
-    # logger.info(f"  Test Accuracy: {best_overall['accuracy']:.4f}")
-    # logger.info(f"  Test Precision: {best_overall['precision']:.4f}")
-    # logger.info(f"  CV Jaccard: {best_overall.get('cv_score', 0):.4f}")
-    # logger.info(f"  Saved to: {model_path}")
-    # logger.info("="*80)
-    
     # Save results summary to file
     summary_path = os.path.join(save_dir, "tuning_summary.pkl")
     with open(summary_path, 'wb') as f:
@@ -830,73 +593,6 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
     
     return results
 
-# Helper function to load the saved best model
-def load_best_model(save_dir='models'):
-    """
-    Load the best saved model and its metadata.
-    
-    Parameters:
-    -----------
-    save_dir : str
-        Directory where the model was saved
-    
-    Returns:
-    --------
-    tuple : (model, metadata)
-    """
-    model_path = os.path.join(save_dir, "best_model.joblib")
-    metadata_path = os.path.join(save_dir, "best_model_metadata.pkl")
-    
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(f"Model not found at {model_path}")
-    
-    # Load model
-    model = joblib.load(model_path)
-    
-    # Load metadata
-    metadata = None
-    if os.path.exists(metadata_path):
-        with open(metadata_path, 'rb') as f:
-            metadata = pickle.load(f)
-    
-    return model, metadata
-
-# # Usage example:
-# if __name__ == "__main__":
-#     # Assuming X_train, X_test, y_train, y_test are already defined
-    
-#     # Run tuning and save only the best model
-#     results = build_and_tune_models(
-#         X_train, y_train, X_test, y_test, 
-#         n_trials=10, 
-#         save_dir='models'
-#     )
-    
-#     # Later, load the best model:
-#     model, metadata = load_best_model('models')
-#     print(f"Loaded model: {metadata['model_name']}")
-#     print(f"Jaccard score: {metadata['scores']['test_jaccard']:.4f}")
-#     print(f"F1 score: {metadata['scores']['test_f1']:.4f}")
-#     print(f"Parameters: {metadata['parameters']}")
-    
-#     # Make predictions with loaded model
-#     y_pred = model.predict(X_test)
-
 # Usage: run on the feature-selected data
-#results = build_and_tune_models(X_train_hybrid, y_train, X_test_hybrid, y_test, n_trials=30) # for the real thing: use the feature-selected X
-
-# this time try it without performing feature selection
-results = build_and_tune_models(X_train_hybrid, y_train, X_test_hybrid, y_test, n_trials=30) # for the real thing: use the feature-selected X
-
-# # TODO start: to test out the following code I will subsample rows from the training dataset, but for the real thing I will need to comment out the following code.
-# # also arbitrarily cut down on the number of columns so as to expedite the testing
-# train_idx_subsample = train_idx[:1000]
-# X_train = X[train_idx_subsample, :100]
-# y_train = y.iloc[train_idx_subsample]
-# X_test = X_test[:, :100]
-# # Also note that this was based on the original X, but for the real thing I'll use the feature-selected X_train_hybrid and X_test_hybrid.
-# results = build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10)
-# # turns out that by subsampling the data, I ended up with some classes that had <2 positive samples, i.e. some of the 65 category-subcategory pairs didn't appear in the subsample.
-# # This caused errors with gradient boosting, but it shouldn't occur as long as I don't subsample the data.
-# # TODO end
-
+# results = build_and_tune_models(X_train_hybrid, y_train, X_test_hybrid, y_test, n_trials=30) 
+results = build_and_tune_models(X_train_hybrid, y_train, X_test_hybrid, y_test, n_trials=120) # if only creating logistic regression models, can use a greater number of trials
