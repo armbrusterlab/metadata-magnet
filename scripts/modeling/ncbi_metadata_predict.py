@@ -86,7 +86,8 @@ X = X[:, selected_indices] # X.shape returns (29, 2000)
 
 all_models = joblib.load("models/tuning_summary.pkl")
 
-for model in ['random_forest', 'gradient_boosting', 'lasso', 'logistic_regression']:
+# for model in ['random_forest', 'gradient_boosting', 'lasso', 'logistic_regression']:
+for model in ['logistic_regression']: # I decided to focus on logistic regression
     print(f"Predicting with {model}...")
     predictions = all_models['models'][model].predict(X)
     predictions_list = [[] for i in range(len(df))]

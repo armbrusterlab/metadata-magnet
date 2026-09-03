@@ -438,6 +438,7 @@ def build_and_tune_models(X_train, y_train, X_test, y_test, n_trials=10, save_di
         
         # Create model
         try:
+            print(params)
             model = create_model_func(params)
             
             # Cross-validation with Jaccard score

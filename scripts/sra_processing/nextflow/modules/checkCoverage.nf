@@ -1,0 +1,22 @@
+/*
+ * Returns runs with sufficient coverage for the given taxid.
+ */
+process checkTaxidCoverage {
+    conda "${workflow.projectDir}/envs/env.yml"
+
+    input:
+    path taxdir
+    val genome_length
+    val taxid
+    val coverage_threshold
+
+    output:
+    path "coverage_taxid_*.tsv", emit: taxid
+    path "coverage_taxid_*_passedWithMetadata.tsv", emit: taxid_passed
+
+    script:
+    """
+    projDir="${workflow.projectDir}" # currently, scripts are located in the parent dir of projDir
+    python "\$projDir/../screen_sra_coverage.py" --taxdir "${taxdir}" --genome_length ${genome_length} --taxid ${taxid} --coverage_threshold ${coverage_threshold}
+    """
+}
