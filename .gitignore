@@ -14,3 +14,7 @@ nextflow/mucA_metadataFixed/
 nextflow/mucA22/
 nextflow/wspF/
 nextflow/example_data/toydb/*
+scripts/sra_processing/nextflow/work/
+scripts/sra_processing/nextflow/results/
+scripts/sra_processing/nextflow/.nextflow.log*
+scripts/sra_processing/nextflow/.nextflow/

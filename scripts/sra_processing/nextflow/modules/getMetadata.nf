@@ -2,7 +2,7 @@
  * Retrieves metadata for the SRA query specified.
  */
 process getMetadata {
-    conda "${workflow.projectDir}/envs/env.yml"
+    conda "${workflow.projectDir}/envs/env_messy.yml"
 
     input:
     val sra_query
@@ -15,6 +15,6 @@ process getMetadata {
     script:
     """
     projDir="${workflow.projectDir}" # currently, scripts are located in the parent dir of projDir
-    python "\$projDir/../get_sra_metadata.sh" "${sra_query}"
+    bash "\$projDir/../get_sra_metadata.sh" "${sra_query}"
     """
 }

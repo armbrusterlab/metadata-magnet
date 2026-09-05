@@ -2,7 +2,7 @@
  * Returns runs with sufficient coverage for the given taxid.
  */
 process checkTaxidCoverage {
-    conda "${workflow.projectDir}/envs/env.yml"
+    conda "${workflow.projectDir}/envs/env_messy.yml"
 
     input:
     path taxdir
@@ -13,6 +13,7 @@ process checkTaxidCoverage {
     output:
     path "coverage_taxid_*.tsv", emit: taxid
     path "coverage_taxid_*_passedWithMetadata.tsv", emit: taxid_passed
+    path "coverage_pass.txt", emit: taxid_passed_list
 
     script:
     """

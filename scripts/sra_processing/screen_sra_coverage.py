@@ -12,7 +12,7 @@ import argparse
 # coverage_threshold = 30 # when parsing this, set the type as int or float
 # taxid = 286 # int or string?
 
-def join_data(taxdir, genome_length, taxid, coverage_threshold=30):
+def join_data(taxdir, genome_length, taxid, coverage_threshold=30, outdir='.'):
     esearch_file = f"{taxdir}/../metadata_esearch.csv"
     esearch = pd.read_csv(esearch_file, sep=",")
 
@@ -76,12 +76,12 @@ def join_data(taxdir, genome_length, taxid, coverage_threshold=30):
 
     passed = df[df.coverage_pass == True].run_id
 
-    df.to_csv(f"{taxdir}/../coverage_taxid_{taxid}.tsv", sep='\t', index=False) # may just name this coverage.tsv, though it's possible to use wildcards to find this tsv
+    df.to_csv(f"{outdir}/coverage_taxid_{taxid}.tsv", sep='\t', index=False) # may just name this coverage.tsv, though it's possible to use wildcards to find this tsv
     
     print("Number of runs with sufficient coverage:", len(passed))
 
     # print(taxdir, genome_length, taxid, coverage_threshold)
-    passed.to_csv(f"{taxdir}/../coverage_pass.txt", sep='\t', index=False, header=False)
+    passed.to_csv(f"{outdir}/coverage_pass.txt", sep='\t', index=False, header=False)
     
     # join the passed IDs to the metadata
     passed_df = df[df.coverage_pass == True]
@@ -98,7 +98,7 @@ def join_data(taxdir, genome_length, taxid, coverage_threshold=30):
     
     df_full.rename(columns={"avgLength":"avg_read_length", "size_MB": "size_megabytes"}, inplace=True)
 
-    df_full.drop('coverage_pass', axis=1).to_csv(f"{taxdir}/../coverage_taxid_{taxid}_passedWithMetadata.tsv", sep='\t', index=False)
+    df_full.drop('coverage_pass', axis=1).to_csv(f"{outdir}/coverage_taxid_{taxid}_passedWithMetadata.tsv", sep='\t', index=False)
 
 
 if __name__ == '__main__':
@@ -109,6 +109,7 @@ if __name__ == '__main__':
     parser.add_argument("-L", "--genome_length", type=float, help="Length of reference genome in bp.")
     parser.add_argument("-i", "--taxid", type=int, help="Taxonomic id to reference when calculating coverage.") # must be int or else it won't match in the JSON
     parser.add_argument("-c", "--coverage_threshold", type=float, default=30, help="Coverage required for the taxonomic ID.")
+    parser.add_argument("-o", "--outdir", type=str, default='.', help='Output directory (default current directory).')
 
     args = parser.parse_args()
     print(args.taxdir, args.genome_length, args.taxid, args.coverage_threshold)

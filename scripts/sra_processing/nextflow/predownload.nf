@@ -12,14 +12,46 @@ params {
 
 workflow {
     main:
+    getMetadata(params.sra_query)
+    def taxdir = getMetadata.out.taxonomy_analysis
 
+    checkTaxidCoverage(taxdir, params.genome_length, params.taxid, params.coverage_threshold)
 
     publish:
+    metadata_esearch = getMetadata.out.metadata_esearch
+    metadata_pysradb = getMetadata.out.metadata_pysradb
+    taxonomy_analysis = taxdir
 
+    taxid = checkTaxidCoverage.out.taxid
+    taxid_passed = checkTaxidCoverage.out.taxid_passed
+    taxid_passed_list = checkTaxidCoverage.out.taxid_passed_list
 }
 
 
 output {
     // SAVE METADATA CSV FILES TO metadata/ DIR BECAUSE THAT'S THE ASSUMPTION IN NEXTFLOW.CONFIG
+    metadata_esearch {
+        path { "metadata" }
+        mode 'copy'
+    }
+    metadata_pysradb {
+        path { "metadata" }
+        mode 'copy'
+    }
+    taxonomy_analysis {
+        path { "metadata" }
+    }
 
+    taxid {
+        path { "metadata/coverage_check" }
+        mode 'copy'
+    }
+    taxid_passed {
+        path { "metadata/coverage_check" }
+        mode 'copy'
+    }
+    taxid_passed_list {
+        path { "metadata/coverage_check" }
+        mode 'copy'
+    }
 }
